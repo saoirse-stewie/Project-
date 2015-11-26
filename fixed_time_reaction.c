@@ -16,10 +16,10 @@ void PORTC_PORTD_IRQHandler();
 
 void PIT_IRQHandler();
 
-enum STATES{STARTUP,ATTACK,RECOVERY};
-enum STATES currentstate = STARTUP;
+enum STATES{START,STARTUP,ATTACK,RECOVERY};
+enum STATES currentstate = START;
 
-volatile float start_up= 66;//start time;
+volatile float start_up= 66000;//start time;
 volatile float attack = 50;
 volatile float recovery = 100;
 volatile float run=0;
@@ -33,58 +33,85 @@ volatile float timer_tick;
 int main()
 {
 
-		float temp;
-		volatile int rand_no;
-		int x;
+	float temp;
+	volatile int rand_no;
+	int x;
 
-		hardware_init();
+    	hardware_init();
 
-		PRINTF("\rStanding Heavy Punch\n");
-		PRINTF("\rStart_up Time: %.4f,Attack_time:  %.4f,Recovery_time %.4f\n\r",(start_up/1000),(attack/1000),(recovery/1000));
-
-
-
-
-		FRDM_KL26Z_LEDs_Configure();
-		PIT_Configure_interrupt_mode(0.001);
-
-		FRDM_KL26Z_SW2_Configure(0,FALLING_EDGE);
-		FRDM_KL26Z_SW3_Configure(0,FALLING_EDGE);
-
-		NVIC_ClearPendingIRQ(31);
-		NVIC_EnableIRQ(31);
+	PRINTF("\rStanding Heavy Punch\n");
+	PRINTF("\rStart_up Time: %.4f,Attack_time:  %.4f,Recovery_time %.4f\n\r",(start_up/1000),(attack/1000),(recovery/1000));
 
 
 
 
-		while(1)
+	FRDM_KL26Z_LEDs_Configure();
+	PIT_Configure_interrupt_mode(1);
+
+	FRDM_KL26Z_SW1_Configure(PULLUP,FALLING_EDGE);
+	FRDM_KL26Z_SW2_Configure(0,FALLING_EDGE);
+	FRDM_KL26Z_SW3_Configure(0,FALLING_EDGE);
+
+	NVIC_ClearPendingIRQ(31);
+	NVIC_EnableIRQ(31);
+
+
+
+
+	while(1)
+	{
+
+		switch(currentstate)
 		{
+		case START:
+			sw_count=0;
+			sw2_count=0;
+			PRINTF("\rPress sw1\n");
 
-			switch(currentstate)
+			while(sw2_count==0)
+			{}
+
+			currentstate=STARTUP;
+			break;
+
+		case STARTUP:
+
+			temp=start_up;
+			PRINTF("\r%.4f", temp);
+
+			while((sw_count==0) && (start_up-temp)<(start_up))
+			{}
+
+			if ((start_up-temp)>=start_up)
 			{
+				PRINTF("\rtoo slow\n");
+				currentstate=START;
+			}
+			else
+			{
+				PRINTF("\ryour reaction time was %.4f\n", (temp-start_up)/1000);
+				currentstate=START;
 
-			case STARTUP:
+			}
 
-				sw_count=0;
-				sw2_count=0;
-				temp=(start_up/1000);
-				PRINTF("\r%.4f", temp);
 
-				while((sw_count==0) && (start_up/1000-temp)<(start_up/1000))
-				{
-					//PRINTF("%.4f",start_up/1000-temp);
-				}
-				//if ((start_up/1000-temp)==0)
-				//{
-				//	PRINTF("\rtoo slow\n");
-				//	currentstate=STARTUP;
-				//}
-				//else
-					PRINTF("\ryour reaction time was %.4f", (start_up/1000 - temp));
-					currentstate=STARTUP;
+			break;
+		case ATTACK:
 
-					break;
-		//	else
+			while((sw2_count==0)&& (attack-temp)<(start_up))
+			{}
+			if ((attack-temp)>=attack)
+			{
+				PRINTF("\rtoo slow\n");
+				currentstate=STARTUP;
+			}
+			else
+			{
+				PRINTF("\ryour reaction time was %.4f\n", (temp-attack)/1000);
+				currentstate=ATTACK;
+			}
+
+			//	else
 
 			//while(timer_tick-temp<(start_up/1000) && (sw2_count==0))
 			//{}
@@ -92,7 +119,7 @@ int main()
 			//}
 
 		}
-		}
+	}
 
 	return 0;
 }
@@ -100,19 +127,20 @@ int main()
 void PORTC_PORTD_IRQHandler()
 {
 
+	if(SW1_read()&&SW1_MASK){
+
+		PORTC_ISFR|= SW1_MASK;
+		sw2_count++;
+
+
+	}
 	if(SW2_read()&&SW2_MASK)
-		{
-			PORTC_ISFR|= SW2_MASK;
-			sw_count++;
-		}
-	// if(SW3_read()&&SW3_MASK){
+	{
+		PORTC_ISFR|= SW2_MASK;
+		sw_count++;
 
-	//	PORTC_ISFR|= SW3_MASK;
+	}
 
-	//		sw2_count++;;
-			//PRINTF("\r%3d\n",timer_tick1/1000);
-
-		//	}
 
 
 
