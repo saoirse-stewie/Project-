@@ -20,12 +20,13 @@ enum STATES{START,STARTUP,ATTACK,RECOVERY};
 enum STATES currentstate = START;
 
 volatile float start_up= 66000;//start time;
-volatile float attack = 50;
+volatile float attack = 50000;
 volatile float recovery = 100;
 volatile float run=0;
 
 int sw_count=0;
 int sw2_count=0;
+int sw3_count=0;
 
 volatile float timer_tick;
 
@@ -66,6 +67,7 @@ int main()
 		case START:
 			sw_count=0;
 			sw2_count=0;
+			sw3_count=0;
 			PRINTF("\rPress sw1\n");
 
 			while(sw2_count==0)
@@ -90,26 +92,27 @@ int main()
 			else
 			{
 				PRINTF("\ryour reaction time was %.4f\n", (temp-start_up)/1000);
-				currentstate=START;
-
+				currentstate=ATTACK;
 			}
-
 
 			break;
 		case ATTACK:
+			temp=attack;
+			PRINTF("\r%.4f", temp);
 
-			while((sw2_count==0)&& (attack-temp)<(start_up))
+			while((sw3_count==0)&& (attack-temp)<(start_up))
 			{}
 			if ((attack-temp)>=attack)
 			{
 				PRINTF("\rtoo slow\n");
-				currentstate=STARTUP;
+				currentstate=START;
 			}
 			else
 			{
 				PRINTF("\ryour reaction time was %.4f\n", (temp-attack)/1000);
-				currentstate=ATTACK;
+				currentstate=START;
 			}
+			break;
 
 			//	else
 
@@ -131,8 +134,6 @@ void PORTC_PORTD_IRQHandler()
 
 		PORTC_ISFR|= SW1_MASK;
 		sw2_count++;
-
-
 	}
 	if(SW2_read()&&SW2_MASK)
 	{
@@ -140,6 +141,14 @@ void PORTC_PORTD_IRQHandler()
 		sw_count++;
 
 	}
+	if(SW3_read()&&SW3_MASK)
+	{
+			PORTC_ISFR|= SW3_MASK;
+			sw3_count++;
+
+	}
+
+
 
 
 
