@@ -36,6 +36,7 @@ int main()
 
 	NVIC_ClearPendingIRQ(31);
 	NVIC_EnableIRQ(31);
+
 	FRDM_KL26Z_SW2_Configure(0,FALLING_EDGE);
 	FRDM_KL26Z_SW1_Configure(PULLUP,FALLING_EDGE);
 
