@@ -92,7 +92,7 @@ int main()
 			else
 			{
 				PRINTF("\ryour reaction time was %.4f\n", (temp-start_up)/1000);
-				currentstate=ATTACK;
+				currentstate=START;
 			}
 
 			break;
@@ -135,7 +135,7 @@ void PORTC_PORTD_IRQHandler()
 		PORTC_ISFR|= SW1_MASK;
 		sw2_count++;
 	}
-	if(SW2_read()&&SW2_MASK)
+	else if(SW2_read()&&SW2_MASK)
 	{
 		PORTC_ISFR|= SW2_MASK;
 		sw_count++;
@@ -143,15 +143,10 @@ void PORTC_PORTD_IRQHandler()
 	}
 	if(SW3_read()&&SW3_MASK)
 	{
-			PORTC_ISFR|= SW3_MASK;
-			sw3_count++;
+		PORTC_ISFR|= SW3_MASK;
+		sw3_count++;
 
 	}
-
-
-
-
-
 
 }
 
