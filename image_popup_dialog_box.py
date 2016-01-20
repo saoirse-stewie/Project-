@@ -36,34 +36,46 @@ def create_dialog():
 	
 def choose_combo():
 
-		global frame
+		global canvas 
+		global item
+		
 		start_button.destroy()
-		#frame.destroy()
 		
-		#Menu_btn = Button(root, text = "Menu", command=create_window)
-
-
-		#Menu_btn.pack()
+		FILENAME = 'U:\year5\Project\choose_combo.gif'
 		
-		Menu_btn = tk.Button(root, text="Menu", command = create_dialog, anchor = 'w',
+		tk_img2 = ImageTk.PhotoImage(file = FILENAME)
+		canvas.image = tk_img2
+		item = canvas.create_image(200, 50, image=tk_img2, anchor = 'n')
+		
+		igm2 = PhotoImage(file="U:\year5\Project\Menu.gif")
+		Menu_btn = tk.Button(root, text ="Menu", command = create_dialog, anchor = 'w',
                     width = 10, activebackground = "#33B5E5")
-		start_button_window = canvas.create_window(10, 10, anchor='nw', window=Menu_btn)  
-		
+		menu_button_window = canvas.create_window(10, 10, anchor='nw', window=Menu_btn) 
 
+		igm3 = PhotoImage(file="U:\year5\Project\combo1.gif")
+		root.image = igm3
+		combo_button = tk.Button(root, image=igm3, command = choose_combo, anchor = 'nw',
+                    width = 700, activebackground = "#33B5E5")
+		combo_button_window = canvas.create_window(80, 120, anchor='w', window=combo_button)  
+		
+		
+			
 		
 		
 		
 		
-
-
-
-
+		
+		
+		
+		
+		
 #w = ttk.Progressbar(master,length=800,orient=HORIZONTAL)
 
 
 
 #frame = Canvas(root, width=500, height=50)
-#photo = ImageTk.PhotoImage(Image.open("C:\Users\g00238234\Desktop\abel-street-fighter-streetfighter-arcade-games-1920x1080-wallpaper28967.jpg"));
+#photo = 
+
 #frame.create_image(10, 10, image = photo, anchor = NW)
 
 #image = Image.open("C:\Users\g00238234\Desktop\abel-street-fighter-streetfighter-arcade-games-1920x1080-wallpaper28967.jpg")
@@ -76,18 +88,24 @@ def choose_combo():
 
 
 
-FILENAME = 'C:\Users\g00238234\Desktop\Abel2.png'
+FILENAME = 'U:\year5\Project\Abel.png'
 root = tk.Tk()
-canvas = tk.Canvas(root, width=500, height=500)
+canvas = tk.Canvas(root, width=800, height=600)
 canvas.pack()
 tk_img = ImageTk.PhotoImage(file = FILENAME)
-canvas.create_image(125, 125, image=tk_img)
+canvas.image = tk_img
+item = canvas.create_image(125, 125, image=tk_img)
+
+
 #btn = Button(root, text = "start", command=choose_combo, activebackground = "#33B5E5")
 #btn.pack()
 igm = PhotoImage(file="U:\year5\Project\Start.gif")
 start_button = tk.Button(root, image=igm, command = choose_combo, anchor = 'nw',
                     width = 175, activebackground = "#33B5E5")
-start_button_window = canvas.create_window(250, 250, anchor='center', window=start_button)  
+start_button_window = canvas.create_window(450, 250, anchor='center', window=start_button)  
+
+
+
 
 
 
