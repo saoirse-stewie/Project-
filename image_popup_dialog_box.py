@@ -31,7 +31,26 @@ import ttk
 	#window = tk.Toplevel(root)
 	
 def create_dialog():
-		window = tk.Toplevel(root)
+		
+		FILENAME = 'U:\year5\Project\Chun.png'
+		#root = tk.Tk()
+		window2 = tk.Toplevel(root)
+		canvas = tk.Canvas(window2, width=300, height=200)
+		canvas.pack()
+		
+		tk_img = ImageTk.PhotoImage(file = FILENAME)
+		canvas.image = tk_img
+		item = canvas.create_image(125, 115, image=tk_img)
+		
+		igm4 = PhotoImage(file="U:\year5\Project\quit.gif")
+		window2.image = igm4
+		quit_button = tk.Button(window2, image=igm4, command = quit, anchor = 'nw',
+                    width = 75, activebackground = "#33B5E5")
+		quit_button_window = canvas.create_window(20, 20, anchor='w', window=quit_button)  
+
+def quit():
+		sys.exit(0)
+	
 
 	
 def choose_combo():
@@ -57,8 +76,9 @@ def choose_combo():
 		combo_button = tk.Button(root, image=igm3, command = choose_combo, anchor = 'nw',
                     width = 700, activebackground = "#33B5E5")
 		combo_button_window = canvas.create_window(80, 120, anchor='w', window=combo_button)  
+			
 		
-		
+			
 			
 		
 		
