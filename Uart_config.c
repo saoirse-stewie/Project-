@@ -75,7 +75,13 @@ int main()
 
 	while(1)
 	{
-		put_char(0x55);
+		put_char('h');
+
+		if(char_received())
+		{
+			PRINTF("received");
+		}
+
 		for(int x=0;x<10000;x++);
 	}
 }
