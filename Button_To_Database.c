@@ -24,6 +24,8 @@ void tx_string(char *ptr);
 void UART1_IRQHandler(void);
 void uart_config();
 int sw_count=0;
+int i;
+char recieved_char[3];
 
 
 int main()
@@ -50,11 +52,31 @@ int main()
 
 	while(1)
 	{
-		if(sw_count>1)
+		if(sw_count>0)
 		{
-			tx_string("CL_LP");
-			sw_count=0;
+			tx_string("CR_MP");
+			//recieved_char[0]=UART1_D;
+			tx_string("CR_MP");
+		//	recieved_char[1]=UART1_D;
+			tx_string("CR_HK");
+			//recieved_char[2]=UART1_D;
+			for(i=0;i<2;i++)
+			{
+				recieved_char[i]=UART1_D;
+			}
+
+
+
+			//PRINTF("%c\n, %c\n, %c\n,   ",recieved_char[0],recieved_char[1],recieved_char[2]);
+
+
+			//if(char_received())
+			//{
+				//PRINTF("received");
+			//}
+
 				//char_received();
+			sw_count=0;
 		}
 	}
 
@@ -124,7 +146,10 @@ void UART1_IRQHandler(void)
 char char_received()
 {
 	if(UART1_S1 & RDRF_MASK)
+	{
+
 		return 1;
+	}
 	else
 		return 0;
 }
@@ -134,6 +159,7 @@ void enable_UART1_receive_interrupt()
 	NVIC_ClearPendingIRQ(13);
 	NVIC_EnableIRQ(13);
 	UART1_C2 |= RIE_MASK;	//set RIE to enable receive interrupt
+
 }
 void put_char(char c)
 {
