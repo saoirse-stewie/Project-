@@ -1,0 +1,9 @@
+[desktop entry]
+encoding=UTF-8
+type=application
+name=gui
+comment=
+exec=sudo python home/pi/project/image_popup_dialog_box.python
+startupnotify=false
+terminal=false
+hidden=false
