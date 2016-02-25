@@ -27,6 +27,9 @@ int sw_count=0;
 int i;
 char recieved_char[3];
 
+enum STATES{START,FIRST,SECOND,THIRD};
+enum STATES currentstate = START;
+
 
 int main()
 {
@@ -52,31 +55,28 @@ int main()
 
 	while(1)
 	{
-		if(sw_count>0)
+		switch(currentstate)
 		{
+		case START:
+			sw_count=0;
+
+			while(sw_count==0)
+			{}
+
 			tx_string("CR_MP");
 			//recieved_char[0]=UART1_D;
 			tx_string("CR_MP");
 		//	recieved_char[1]=UART1_D;
 			tx_string("CR_HK");
+
 			//recieved_char[2]=UART1_D;
 			for(i=0;i<2;i++)
 			{
 				recieved_char[i]=UART1_D;
 			}
-
-
-
-			//PRINTF("%c\n, %c\n, %c\n,   ",recieved_char[0],recieved_char[1],recieved_char[2]);
-
-
-			//if(char_received())
-			//{
-				//PRINTF("received");
-			//}
-
-				//char_received();
 			sw_count=0;
+			currentstate = START;
+			break;
 		}
 	}
 
