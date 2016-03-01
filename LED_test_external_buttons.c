@@ -9,12 +9,15 @@
 #include "fsl_debug_console.h"
 #include "gpio.h"
 #include "pit_kl26z.h"
-
+int sw2_count=0;
+int sw_count=0;
 
 void PORTC_PORTD_IRQHandler();
+void PORTA_IRQHandler();
 
 int main()
 {
+
 	hardware_init();
 
 	FRDM_KL26Z_LEDs_Configure();
@@ -26,12 +29,31 @@ int main()
 	NVIC_ClearPendingIRQ(31);
 	NVIC_EnableIRQ(31);
 
-	////LED_set(GREEN,OFF);
-	//LED_set(RED,OFF);
+	NVIC_ClearPendingIRQ(30);
+	NVIC_EnableIRQ(30);
+
+	LED_set(GREEN,OFF);
+	LED_set(BLUE,OFF);
 	//LED_set(BLUE,OFF);
 
 	while(1)
-	{}
+	{
+		if(sw_count>0)
+		{
+			sw_count=0;
+			sw2_count=0;
+
+
+
+		}
+		else if(sw2_count>0)
+		{
+			sw_count=0;
+			sw2_count=0;
+
+
+		}
+	}
 
 
 	return 0;
@@ -41,23 +63,48 @@ int main()
 void PORTC_PORTD_IRQHandler()
 {
 
-	if(SW2_read()==0)
-	{
-		PORTC_ISFR|= SW2_MASK; //clear interrupt flag for ptc1
-		LED_set(GREEN,TOGGLE);
-	}
-	else if (SW3_read()==0)
+	if(PORTC_ISFR & SW3_MASK)
 	{
 		PORTC_ISFR|= SW3_MASK; //clear interrupt flag for ptc1
-		LED_set(RED,TOGGLE);
+		LED_set(BLUE,ON);
+					for(int i=0;i<2000000;i++);
+					LED_set(BLUE,OFF);
+		sw2_count++;
 	}
-	else if (SW4_read()==0)
-	{
-		PORTD_ISFR|= SW4_MASK; //clear interrupt flag for ptc1
-		LED_set(BLUE,TOGGLE);
-	}
+	 if(PORTC_ISFR & SW2_MASK)
+		{
+		PORTC_ISFR|= SW2_MASK; //clear interrupt flag for ptc1
+		LED_set(GREEN,ON);
+					for(int i=0;i<2000000;i++);
+					LED_set(GREEN,OFF);
+			//LED_set(BLUE,ON);
+			//for(int i=0;i<2000000;i++);
+			//LED_set(BLUE,OFF);
+
+			//for(int i=0;i<2000000;i++);
+
+			sw_count++;
+		}
+	//else if (SW3_read()==0)
+	//{
+		//PORTC_ISFR|= SW3_MASK; //clear interrupt flag for ptc1
+		//LED_set(BLUE,TOGGLE);
+	//}
+	//else if (SW4_read())
+	//{
+
+		//PORTD_ISFR|= SW4_MASK; //clear interrupt flag for ptc1
+		//LED_set(BLUE,TOGGLE);
+
+	//}
 
 
 }
+void PORTA_IRQHandler()
+{
+	PORTA_ISFR|= SW3_MASK;
+	LED_set(BLUE,TOGGLE);
+}
+
 
 
