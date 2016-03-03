@@ -23,10 +23,10 @@ void put_char(char c);
 void tx_string(char *ptr);
 void UART1_IRQHandler(void);
 void uart_config();
-int sw_count=0;
-int sw2_count=0;
+static int sw_count=0;
+static int sw2_count=0;
 int i;
-char recieved_char[3];
+static char recieved_char[3];
 
 enum STATES{START,FIRST,SECOND,THIRD};
 enum STATES currentstate = START;
@@ -38,6 +38,7 @@ int main()
 	hardware_init();
 	uart_config();
 	enable_UART1_receive_interrupt();
+
 	FRDM_KL26Z_LEDs_Configure();
 
 	FRDM_KL26Z_SW2_Configure(0,FALLING_EDGE);
@@ -50,9 +51,7 @@ int main()
 	NVIC_ClearPendingIRQ(30);
 	NVIC_EnableIRQ(30);
 
-	////LED_set(GREEN,OFF);
-	//LED_set(RED,OFF);
-	//LED_set(BLUE,OFF);
+	PRINTF("Hello");
 
 	while(1)
 	{
@@ -63,17 +62,41 @@ int main()
 			sw2_count=0;
 			while(sw_count==0)
 			{}
-			tx_string("Start");
-			sw_count=0;
+			LED_set(GREEN,ON);
+			for(int i=0;i<2000000;i++);
+			LED_set(GREEN,OFF);
+			//tx_string("Start");
+			//sw_count=0;
 			currentstate = FIRST;
 			break;
 		case FIRST:
+			sw_count=0;
 			sw2_count=0;
 			while(sw2_count==0)
 			{}
-			tx_string("Combo");
+			LED_set(RED,ON);
+			for(int i=0;i<2000000;i++);
+			LED_set(RED,OFF);
+			//tx_string("Combo");
+			//sw2_count=0;
+			currentstate = SECOND;
+			break;
+		case SECOND:
+			sw_count=0;
 			sw2_count=0;
-			currentstate = START;
+			while(sw2_count==0)
+			{}
+			//tx_string("CR_MP ");
+			tx_string("CR_MP  ");
+			tx_string("CR_MP");
+			tx_string("CR_HK");
+
+
+
+
+
+
+			currentstate = FIRST;
 			break;
 
 		}
@@ -86,23 +109,17 @@ int main()
 
 void PORTC_PORTD_IRQHandler()
 {
-
 	if(PORTC_ISFR & SW3_MASK)
 		{
 			PORTC_ISFR|= SW3_MASK; //clear interrupt flag for ptc1
-			LED_set(BLUE,ON);
+			sw_count++;
+		}
+		if(PORTC_ISFR & SW2_MASK)
+		{
+			PORTC_ISFR|= SW2_MASK; //clear interrupt flag for ptc
 			for(int i=0;i<2000000;i++);
-			LED_set(BLUE,OFF);
 			sw2_count++;
 		}
-		 if(PORTC_ISFR & SW2_MASK)
-			{
-			PORTC_ISFR|= SW2_MASK; //clear interrupt flag for ptc1
-			LED_set(GREEN,ON);
-			for(int i=0;i<2000000;i++);
-			LED_set(GREEN,OFF);
-				sw_count++;
-			}
 
 }
 void uart_config()
@@ -127,8 +144,15 @@ void uart_config()
 }
 void UART1_IRQHandler(void)
 {
+	int i=0;
     if(UART1_S1 & RDRF_MASK)
     {
+    	for(i=0;i<3;i++)
+    	{
+    		recieved_char[i] = UART1_D;
+    	}
+
+
     	//PUTCHAR(UART1_D);
     	//PUTCHAR('A');
     }
