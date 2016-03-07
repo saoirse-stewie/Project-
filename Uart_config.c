@@ -23,6 +23,7 @@
 char char_received();
 void enable_UART1_receive_interrupt();
 void put_char(char c);
+void tx_string(char *ptr);
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -69,14 +70,21 @@ int main()
 	hardware_init();
 	uart_config();
 	enable_UART1_receive_interrupt();
-
+	int i=0;
 	PRINTF("UART0 Test Code\n\r");
-	PRINTF("Any entered character will be echoed\r\n\n");
-
 	while(1)
 	{
-		put_char(0x55);
-		for(int x=0;x<10000;x++);
+
+		//put_char('h');
+		//for(i=0;i<1;i++)
+			tx_string("CR_MP CR_MP CR_HP ");
+			for(int x=0;x<2000000;x++);
+		//if(char_received())
+		//{
+			//PRINTF("received");
+		//}
+
+	//	for(int x=0;x<10000;x++);
 	}
 }
 
@@ -99,10 +107,16 @@ void enable_UART1_receive_interrupt()
 }
 void put_char(char c)
 {
+	int i=0;
 	while((UART1_S1 & UART_S1_TRDE_MASK)==0)
 	{}
 	UART1_D=c;
 }
+void tx_string(char *ptr){
+	while(*ptr != '\0')
+		put_char(*ptr++);
+}
+
 
 
 
