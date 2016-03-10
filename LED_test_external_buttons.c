@@ -35,6 +35,7 @@ int main()
 	NVIC_ClearPendingIRQ(30);
 	NVIC_EnableIRQ(30);
 
+	PRINTF("hello");
 	//LED_set(GREEN,OFF);
 	LED_set(ALL,OFF);
 	//LED_set(BLUE,OFF);
