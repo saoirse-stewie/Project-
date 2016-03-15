@@ -9,12 +9,17 @@
 #include "fsl_debug_console.h"
 #include "gpio.h"
 #include "pit_kl26z.h"
+#include <string.h>
 
+#define BUFFERSIZE 10
 #define RDRF_MASK 0x20	//Receive Data Register Full Flag Mask
 #define RIE_MASK 0x20	//Receive Interrupt Enable Mask
 #define UART_S1_TRDE_MASK 0X80
 
 
+void init_buffer();
+void put_buffer(char ch);
+char get_buffer();
 void PORTC_PORTD_IRQHandler();
 void PORTA_IRQHandler();
 char char_received();
@@ -23,9 +28,18 @@ void put_char(char c);
 void tx_string(char *ptr);
 void UART1_IRQHandler(void);
 void uart_config();
+
+char buffer[BUFFERSIZE];
+char *wr;
+char * rd;
+char received;
+char command_received=0;
 static int sw_count=0;
 static int sw2_count=0;
 int i;
+char received_char[BUFFERSIZE];
+int x =0;
+int done = 0;
 static char recieved_char[3];
 
 enum STATES{START,FIRST,SECOND,THIRD};
@@ -40,6 +54,7 @@ int main()
 	enable_UART1_receive_interrupt();
 
 	FRDM_KL26Z_LEDs_Configure();
+	init_buffer();
 
 	FRDM_KL26Z_SW2_Configure(0,FALLING_EDGE);
 	FRDM_KL26Z_SW3_Configure(0,FALLING_EDGE);
@@ -51,7 +66,7 @@ int main()
 	NVIC_ClearPendingIRQ(30);
 	NVIC_EnableIRQ(30);
 
-	PRINTF("Hello");
+	//PRINTF("Hello");
 
 	while(1)
 	{
@@ -86,30 +101,46 @@ int main()
 			sw2_count=0;
 			while(sw2_count==0)
 			{}
-			//tx_string("CR_MP ");
-			tx_string("CR_MP  ");
-			tx_string("CR_MP");
-			tx_string("CR_HK");
+			//while(1)
+			//{
+				//tx_string("CR_MP CR_HK");
 
+				//if(command_received)
+				////{
+					//command_received = 0;
+					//done =0; x =0;
+					//memset(received_char,0,BUFFERSIZE); //sets elements back to zero
+					//while(done==0)
+					//{
+					//	received_char[x] = get_buffer();
+					////	if(received_char[x]=='n')//if enter detected
+						//{
+						//	done=1;
+					//	/}
+					//	else
+					//		x++;
+						//
+					//}
+					//PRINTF("%c",received_char[0]);
+				//}
+				//tx_string("CR_MP");
+				//tx_string("CR_HK");
 
+				currentstate = FIRST;
+				break;
 
-
-
-
-			currentstate = FIRST;
-			break;
-
+			//}
 		}
+
+
+		return 0;
 	}
-
-
-	return 0;
 }
 
 
-void PORTC_PORTD_IRQHandler()
-{
-	if(PORTC_ISFR & SW3_MASK)
+	void PORTC_PORTD_IRQHandler()
+	{
+		if(PORTC_ISFR & SW3_MASK)
 		{
 			PORTC_ISFR|= SW3_MASK; //clear interrupt flag for ptc1
 			sw_count++;
@@ -117,13 +148,12 @@ void PORTC_PORTD_IRQHandler()
 		if(PORTC_ISFR & SW2_MASK)
 		{
 			PORTC_ISFR|= SW2_MASK; //clear interrupt flag for ptc
-			for(int i=0;i<2000000;i++);
 			sw2_count++;
 		}
 
-}
-void uart_config()
-{
+	}
+	void uart_config()
+	{
 		int SBR;
 		PORTE_PCR0|=0x3u<<8;//mux - ALT2 UART0_RX
 		PORTE_PCR1|=0x3u<<8;//mux - ALT2 UART0_TX
@@ -141,48 +171,81 @@ void uart_config()
 		UART1_C1=0;
 		UART1_C2|=0X0C;
 		UART1_C3=0;
-}
-void UART1_IRQHandler(void)
-{
-	int i=0;
-    if(UART1_S1 & RDRF_MASK)
-    {
-    	for(i=0;i<3;i++)
-    	{
-    		recieved_char[i] = UART1_D;
-    	}
-
-
-    	//PUTCHAR(UART1_D);
-    	//PUTCHAR('A');
-    }
-}
-char char_received()
-{
-	if(UART1_S1 & RDRF_MASK)
-	{
-
-		return 1;
 	}
-	else
-		return 0;
-}
-void enable_UART1_receive_interrupt()
-{
-	//Configure NVIC
-	NVIC_ClearPendingIRQ(13);
-	NVIC_EnableIRQ(13);
-	UART1_C2 |= RIE_MASK;	//set RIE to enable receive interrupt
+	void UART1_IRQHandler(void)
+	{
+		int i=0;
+		if(UART1_S1 & RDRF_MASK)
+		{
+			received=UART1_D;
+			put_buffer(received);
 
-}
-void put_char(char c)
-{
-	while((UART1_S1 & UART_S1_TRDE_MASK)==0)
-	{}
-	UART1_D=c;
-}
-void tx_string(char *ptr){
-	while(*ptr != '\0')
-		put_char(*ptr++);
-}
+			if(received == 'n')
+			{
+				command_received=1;
+			}
+
+		}
+	}
+	void init_buffer()
+	{
+		wr= buffer; //write pointer points to address of first element in buffer
+		rd=buffer;	//read pointer points to address of
+		memset(buffer,0,sizeof(buffer)); //sets elements back to zero
+	}
+	char char_received()
+	{
+		if(UART1_S1 & RDRF_MASK)
+		{
+
+			return 1;
+		}
+		else
+			return 0;
+	}
+	void enable_UART1_receive_interrupt()
+	{
+		//Configure NVIC
+		NVIC_ClearPendingIRQ(13);
+		NVIC_EnableIRQ(13);
+		UART1_C2 |= RIE_MASK;	//set RIE to enable receive interrupt
+
+	}
+	void put_char(char c)
+	{
+		while((UART1_S1 & UART_S1_TRDE_MASK)==0)
+		{}
+		UART1_D=c;
+	}
+	void tx_string(char *ptr){
+		while(*ptr != '\0')
+			put_char(*ptr++);
+	}
+	void put_buffer(char ch)
+	{
+		*wr =ch;//points to the contents in the address in buffer
+		//(start address) + (last address)
+		if(++wr==(buffer+BUFFERSIZE))//increment write, if its equal to start and end address
+			wr = buffer;//point to first address
+		if(rd==wr)//if rd pointer and wr pointer are equal
+		{
+			if(++rd==(buffer+BUFFERSIZE))//increment rd, if its equal to start and end address
+				rd= buffer;//point to first address
+		}
+	}
+	char get_buffer()
+	{
+		char c;
+		if(rd==wr)//if the read and write are equal
+			return 0; // return 0;
+		else
+		{
+			c = *rd;//points to the contents in the address in buffer
+			if(++rd == (buffer+BUFFERSIZE))//increment read, if its equal to start and end address
+			{
+				rd=0;//reset
+			}
+			return c;
+		}
+	}
 
