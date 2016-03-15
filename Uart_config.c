@@ -32,6 +32,7 @@ void put_char(char c);
 void tx_string(char *ptr);
 char received;
 char command_received=0;
+static char startup;
 char received_char[BUFFERSIZE];
 int x =0;
 int done = 0;
@@ -55,6 +56,7 @@ void UART1_IRQHandler(void)
 		{
 			command_received=1;
 		}
+
 		//PUTCHAR(received);
 		//PRINTF("%d",counter);
 
@@ -98,13 +100,13 @@ int main()
 	while(1)
 	{
 
-		tx_string("CR_MP");
+		tx_string("CR_MP CR_HP");
 
 		if(command_received)
 		{
 			command_received =0;
 			done =0; x =0;
-			memset(received_char,0,BUFFERSIZE); //sets elements back to zero
+			//memset(received_char,0,BUFFERSIZE); //sets elements back to zero
 			while(done==0)
 			{
 				received_char[x] = get_buffer();

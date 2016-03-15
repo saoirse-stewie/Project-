@@ -1,5 +1,5 @@
 /*
- * LED_test_external_buttons.c
+a * LED_test_external_buttons.c
  *
  *  Created on: 10 Nov 2015
  *      Author: g00238234
@@ -21,6 +21,7 @@ void PORTA_IRQHandler();
 int main()
 {
 
+
 	hardware_init();
 
 	FRDM_KL26Z_LEDs_Configure();
@@ -35,7 +36,7 @@ int main()
 	NVIC_ClearPendingIRQ(30);
 	NVIC_EnableIRQ(30);
 
-	PRINTF("hello");
+
 	//LED_set(GREEN,OFF);
 	LED_set(ALL,OFF);
 	//LED_set(BLUE,OFF);
