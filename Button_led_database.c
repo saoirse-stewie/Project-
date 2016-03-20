@@ -9,11 +9,20 @@ a * LED_test_external_buttons.c
 #include "fsl_debug_console.h"
 #include "gpio.h"
 #include "pit_kl26z.h"
+#include <string.h>
+#include <stdio.h>
 
 #define BUFFERSIZE 10
 #define RDRF_MASK 0x20	//Receive Data Register Full Flag Mask
 #define RIE_MASK 0x20	//Receive Interrupt Enable Mask
 #define UART_S1_TRDE_MASK 0X80
+
+char cr_mp[3];
+char cr_hp[3];
+char test[10] = {'1','2','3'};
+char buff[10];
+char v[] = {'i','h','t'};
+char tmpstr;
 
 static int sw2_count=0;
 static int sw_count=0;
@@ -49,6 +58,13 @@ int main()
 {
 
 
+	NVIC_ClearPendingIRQ(31);
+	NVIC_EnableIRQ(31);
+
+	sw_count=0;
+	sw2_count=0;
+
+
 	hardware_init();
 	uart_config();
 	enable_UART1_receive_interrupt();
@@ -59,11 +75,7 @@ int main()
 	FRDM_KL26Z_SW3_Configure(0,FALLING_EDGE);
 	FRDM_KL26Z_SW4_Configure(0,FALLING_EDGE);
 
-	NVIC_ClearPendingIRQ(31);
-	NVIC_EnableIRQ(31);
 
-	NVIC_ClearPendingIRQ(30);
-	NVIC_EnableIRQ(30);
 
 	PRINTF("hello");
 	//LED_set(GREEN,OFF);
@@ -96,6 +108,7 @@ int main()
 			LED_set(GREEN,ON);
 			for(int i=0;i<2000000;i++);
 			LED_set(GREEN,OFF);
+			//	tx_string("Start");
 			currentstate = SECOND;
 			break;
 		case SECOND:
@@ -103,13 +116,33 @@ int main()
 			sw2_count=0;
 			while(sw2_count==0)
 			{}
+			//	tx_string("Combo");
+
 			database_extraction();
 			int i;
-			for(i=0;i<=7;i++)
-			{
-				PRINTF("%c",received_char[i]);
+			cr_mp[0] = received_char[0];
+			cr_hp[0] = received_char[1];
+			cr_mp[1] = received_char[2];
+			cr_hp[1] = received_char[3];
+			cr_mp[2] = received_char[4];
+			cr_hp[2] = received_char[6];
 
+			//snprintf(buff, sizeof buff, "%c%c", test, v[2]);
+			strncat ((char*)&cr_mp[2], (char*)&received_char[5], 1);
+			strncat ((char*)&cr_hp[2], (char*)&received_char[7], 1);
+
+			for(i=0;i<=3;i++)
+			{
+				PRINTF("%c",cr_mp[i]);
 			}
+			for(i=0;i<=3;i++)
+			{
+				PRINTF("%c",cr_hp[i]);
+			}
+			//PRINTF("%c", tmpstr);
+
+
+
 
 			currentstate = FIRST;
 			break;
