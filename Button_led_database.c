@@ -17,7 +17,7 @@ a * LED_test_external_buttons.c
 #define RIE_MASK 0x20	//Receive Interrupt Enable Mask
 #define UART_S1_TRDE_MASK 0X80
 
-char cr_mp[3];
+char cr_mp[2];
 char cr_hp[3];
 char test[10] = {'1','2','3'};
 char buff[10];
@@ -92,14 +92,11 @@ int main()
 			sw2_count=0;
 			while(sw_count==0)
 			{}
-			//if(sw_count > 0)
-			//{
 			LED_set(RED,ON);
 			for(int i=0;i<2000000;i++);
 			LED_set(RED,OFF);
 			currentstate = FIRST;
 			break;
-			//}
 		case FIRST:
 			sw_count=0;
 			sw2_count=0;
@@ -108,7 +105,7 @@ int main()
 			LED_set(GREEN,ON);
 			for(int i=0;i<2000000;i++);
 			LED_set(GREEN,OFF);
-			//	tx_string("Start");
+			//	tx_string("Start"); // add when using GUI
 			currentstate = SECOND;
 			break;
 		case SECOND:
@@ -116,8 +113,6 @@ int main()
 			sw2_count=0;
 			while(sw2_count==0)
 			{}
-			//	tx_string("Combo");
-
 			database_extraction();
 			int i;
 			cr_mp[0] = received_char[0];
@@ -127,8 +122,7 @@ int main()
 			cr_mp[2] = received_char[4];
 			cr_hp[2] = received_char[6];
 
-			//snprintf(buff, sizeof buff, "%c%c", test, v[2]);
-			strncat ((char*)&cr_mp[2], (char*)&received_char[5], 1);
+			strncat ((char*)&cr_mp[2], (char*)&received_char[5], 1);//this must be improved
 			strncat ((char*)&cr_hp[2], (char*)&received_char[7], 1);
 
 			for(i=0;i<=3;i++)
@@ -139,8 +133,9 @@ int main()
 			{
 				PRINTF("%c",cr_hp[i]);
 			}
-			//PRINTF("%c", tmpstr);
 
+			//TODO
+			//add three buttons and extract values for reaction time.... maybe try in an extra function .... this can be main file
 
 
 
