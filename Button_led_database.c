@@ -17,15 +17,15 @@ a * LED_test_external_buttons.c
 #define RIE_MASK 0x20	//Receive Interrupt Enable Mask
 #define UART_S1_TRDE_MASK 0X80
 
-char cr_mp[2];
-char cr_hp[3];
-char test[10] = {'1','2','3'};
-char buff[10];
-char v[] = {'i','h','t'};
-char tmpstr;
+char combo1[] = "CR_MP CR_HP";
+
+
+static int cr_mp[2];
+static int cr_hp[2];
 
 static int sw2_count=0;
 static int sw_count=0;
+static int sw3_count=0;
 char *wr;
 char * rd;
 char received;
@@ -41,6 +41,9 @@ char buffer[BUFFERSIZE];
 enum STATES{START,FIRST,SECOND,THIRD};
 enum STATES currentstate = START;
 
+enum COMBOSTATES{READY, PROCESS, RETURN};
+enum COMBOSTATES thisstate = READY;
+
 void PORTC_PORTD_IRQHandler();
 void PORTA_IRQHandler();
 char get_buffer();
@@ -52,7 +55,9 @@ char char_received();
 void init_buffer();
 void UART1_IRQHandler(void);
 void uart_config();
-char database_extraction();
+void database_extraction();
+void char_int_conversion();
+double reaction_time();
 
 int main()
 {
@@ -77,7 +82,7 @@ int main()
 
 
 
-	PRINTF("hello");
+
 	//LED_set(GREEN,OFF);
 	LED_set(ALL,OFF);
 	//LED_set(BLUE,OFF);
@@ -113,32 +118,7 @@ int main()
 			sw2_count=0;
 			while(sw2_count==0)
 			{}
-			database_extraction();
-			int i;
-			cr_mp[0] = received_char[0];
-			cr_hp[0] = received_char[1];
-			cr_mp[1] = received_char[2];
-			cr_hp[1] = received_char[3];
-			cr_mp[2] = received_char[4];
-			cr_hp[2] = received_char[6];
-
-			strncat ((char*)&cr_mp[2], (char*)&received_char[5], 1);//this must be improved
-			strncat ((char*)&cr_hp[2], (char*)&received_char[7], 1);
-
-			for(i=0;i<=3;i++)
-			{
-				PRINTF("%c",cr_mp[i]);
-			}
-			for(i=0;i<=3;i++)
-			{
-				PRINTF("%c",cr_hp[i]);
-			}
-
-			//TODO
-			//add three buttons and extract values for reaction time.... maybe try in an extra function .... this can be main file
-
-
-
+			database_extraction(combo1);
 			currentstate = FIRST;
 			break;
 		}
@@ -147,18 +127,19 @@ int main()
 	return 0;
 }
 
-char database_extraction()
+void database_extraction(char ch[])
 {
 
 	while(1)
 	{
-		tx_string("CR_MP CR_HP");
+
+		tx_string(ch);
 
 		if(command_received)
 		{
 			command_received = 0;
 			done =0; x =0;
-			//memset(received_char,0,BUFFERSIZE); //sets elements back to zero
+			memset(received_char,0,BUFFERSIZE); //sets elements back to zero
 			while(done==0)
 			{
 				received_char[x] = get_buffer();
@@ -171,65 +152,89 @@ char database_extraction()
 
 			}
 			int i;
-			for(i=0;i<=7;i++)
-			{
-				return received_char[i];
-			}
-			///return received_char[0];
-			//PRINTF("%c",received_char[0]);
-			//PRINTF("%c",received_char[1]);
-			//PRINTF("%c",received_char[2]);
-			//PRINTF("%c",received_char[3]);
-			//PRINTF("%c",received_char[4]);
-			//PRINTF("%c",received_char[5]);
-			//PRINTF("%c",received_char[6]);
-			//PRINTF("%c",received_char[7]);
+
+			char_int_conversion(ch);
 
 		}
+	}
+}
 
+void char_int_conversion(char c[])
+{
+
+	int i;
+	int n=0;
+	PRINTF ("%s",c);
+
+	if(strcmp(c,combo1)==0)//compare both the strings
+	{
+		cr_mp[0] = received_char[0]-'0';//startup//4
+		cr_mp[1] = received_char[2]-'0';//active//4
+		cr_mp[2] = received_char[5]-'0';//recovery //17
+		cr_mp[2]  += 10;
+
+
+
+		cr_hp[0] = received_char[1]-'0';//startup//4
+		cr_hp[1] = received_char[3]-'0';//active//8
+		cr_hp[2] = received_char[6]-'0';//recovery//20
+		cr_hp[2] *=10;
+
+
+		reaction_time();
 
 	}
 
-	return received_char[x];
 }
 
+double reaction_time()
+{
+	PRINTF("Beginning reaction Calculation");
 
+	//TODO framedata studying.. RESEACRH
+	while(1)
+	{
+
+		switch(thisstate)
+		{
+		case READY:
+			sw_count=0;
+			sw2_count=0;
+			sw3_count=0;
+			while(sw3_count==0)
+			{}
+			LED_set(RED,ON);
+			for(int i=0;i<2000000;i++);
+			LED_set(RED,OFF);
+			currentstate = READY;
+			break;
+
+		}
+
+	}
+
+
+}
 void PORTC_PORTD_IRQHandler()
 {
 
 	if(PORTC_ISFR & SW3_MASK)
 	{
 		PORTC_ISFR|= SW3_MASK; //clear interrupt flag for ptc1
-		//for(int i=0;i<2000000;i++);
-		//LED_set(BLUE,OFF);
+
 		sw_count++;
 	}
 	if(PORTC_ISFR & SW2_MASK)
 	{
 		PORTC_ISFR|= SW2_MASK; //clear interrupt flag for ptc1
-		//LED_set(GREEN,ON);
-		//for(int i=0;i<2000000;i++);
-		//LED_set(GREEN,OFF);
-		//LED_set(BLUE,ON);
-		//for(int i=0;i<2000000;i++);
-		//LED_set(BLUE,OFF);
-
-		//for(int i=0;i<2000000;i++);
-
 		sw2_count++;
 	}
-	//else if (SW3_read()==0)
-	//{
-	//PORTC_ISFR|= SW3_MASK; //clear interrupt flag for ptc1
-	//LED_set(BLUE,TOGGLE);
-	//}
-	//else if (SW4_read())
-	//{
+	if(PORTC_ISFR & SW4_MASK)
+	{
+		PORTC_ISFR|= SW4_MASK; //clear interrupt flag for ptc1
+		sw3_count++;
 
-	//PORTD_ISFR|= SW4_MASK; //clear interrupt flag for ptc1
-	//LED_set(BLUE,TOGGLE);
-
-	//}
+	}
 
 
 }
