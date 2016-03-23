@@ -16,16 +16,28 @@ a * LED_test_external_buttons.c
 #define RDRF_MASK 0x20	//Receive Data Register Full Flag Mask
 #define RIE_MASK 0x20	//Receive Interrupt Enable Mask
 #define UART_S1_TRDE_MASK 0X80
+#define TIME 60
 
 char combo1[] = "CR_MP CR_HP";
 
 
 static int cr_mp[2];
 static int cr_hp[2];
+static int reaction_crmp=0;
+static int reaction_crhp=0;
+volatile int storage=0;
+volatile int storage2=0;
+
 
 static int sw2_count=0;
 static int sw_count=0;
 static int sw3_count=0;
+static int sw4_count=0;
+
+volatile int tick_count=0;
+volatile int delay = 10000;
+
+
 char *wr;
 char * rd;
 char received;
@@ -33,6 +45,8 @@ char command_received=0;
 char received_char[BUFFERSIZE];
 static int x =0;
 int done = 0;
+int run=0;
+int run2=0;
 
 char buffer[BUFFERSIZE];
 
@@ -56,8 +70,9 @@ void init_buffer();
 void UART1_IRQHandler(void);
 void uart_config();
 void database_extraction();
-void char_int_conversion();
-double reaction_time();
+void char_int_conversion(char c[], int, int);
+double reaction_time(int,int);
+void PIT_IRQHandler();
 
 int main()
 {
@@ -76,12 +91,13 @@ int main()
 	init_buffer();
 	FRDM_KL26Z_LEDs_Configure();
 
+
 	FRDM_KL26Z_SW2_Configure(0,FALLING_EDGE);
 	FRDM_KL26Z_SW3_Configure(0,FALLING_EDGE);
 	FRDM_KL26Z_SW4_Configure(0,FALLING_EDGE);
+	FRDM_KL26Z_SW5_Configure(0,FALLING_EDGE);
 
-
-
+	PRINTF("hello");
 
 	//LED_set(GREEN,OFF);
 	LED_set(ALL,OFF);
@@ -153,18 +169,17 @@ void database_extraction(char ch[])
 			}
 			int i;
 
-			char_int_conversion(ch);
+			char_int_conversion(ch, reaction_crmp, reaction_crhp);
 
 		}
 	}
 }
 
-void char_int_conversion(char c[])
+void char_int_conversion(char c[], int reaction_crmp, int reaction_crhp)
 {
 
 	int i;
 	int n=0;
-	PRINTF ("%s",c);
 
 	if(strcmp(c,combo1)==0)//compare both the strings
 	{
@@ -174,40 +189,83 @@ void char_int_conversion(char c[])
 		cr_mp[2]  += 10;
 
 
+		for(i=0;i<3;i++)
+		{
+			//PRINTF("%d", cr_mp[i]);
+			reaction_crmp = reaction_crmp + cr_mp[i];
+			//reaction_crhp = reaction_crhp +
+		}
+		reaction_crmp=(reaction_crmp*1000)/TIME;
 
 		cr_hp[0] = received_char[1]-'0';//startup//4
 		cr_hp[1] = received_char[3]-'0';//active//8
 		cr_hp[2] = received_char[6]-'0';//recovery//20
 		cr_hp[2] *=10;
 
+		for(i=0;i<3;i++)
+		{
+			reaction_crhp = reaction_crhp + cr_hp[i];
+		}
+		reaction_crhp=reaction_crhp/TIME;
 
-		reaction_time();
+		reaction_time(reaction_crmp,reaction_crhp);
 
 	}
 
 }
 
-double reaction_time()
+double reaction_time(int reaction_crmp, int reaction_crhp)
 {
-	PRINTF("Beginning reaction Calculation");
+	PRINTF("Beginning reaction Calculation\n");
+	volatile int temp;
+	volatile int temp2;
+	float reaction;
+	storage = reaction_crmp;
+	storage2 = reaction_crhp;
 
+	PIT_Configure_interrupt_mode(0.001);
 	//TODO framedata studying.. RESEACRH
+
+
 	while(1)
 	{
 
-		switch(thisstate)
+		switch(thisstate)//better naming convention
 		{
 		case READY:
-			sw_count=0;
-			sw2_count=0;
-			sw3_count=0;
-			while(sw3_count==0)
-			{}
-			LED_set(RED,ON);
-			for(int i=0;i<2000000;i++);
-			LED_set(RED,OFF);
-			currentstate = READY;
+
+			while(delay/1000>0)
+				PRINTF("\r%3d", --delay / 1000);
+			thisstate = PROCESS;
 			break;
+		case PROCESS:
+			PRINTF("\n");
+			delay=10000;
+			temp = reaction_crmp;
+			temp2 = reaction_crhp;
+			sw3_count=0;
+			sw4_count=0;
+
+			while((sw4_count==0))
+			{}
+			run=1;
+			temp = reaction_crmp;
+			while((sw3_count==0)&&(storage>0))
+			{}
+			run2=1;
+			run=0;
+
+			reaction = (float)(storage-temp)/1000 + (float)(storage2-temp2);
+			PRINTF("%f", reaction);
+
+			storage = reaction_crmp;
+
+
+			thisstate = READY;
+			break;
+
+
+
 
 		}
 
@@ -233,6 +291,12 @@ void PORTC_PORTD_IRQHandler()
 	{
 		PORTC_ISFR|= SW4_MASK; //clear interrupt flag for ptc1
 		sw3_count++;
+
+	}
+	if(PORTC_ISFR & SW5_MASK)
+	{
+		PORTC_ISFR|= SW5_MASK; //clear interrupt flag for ptc1
+		sw4_count++;
 
 	}
 
@@ -340,6 +404,21 @@ char get_buffer()
 	}
 }
 
+void PIT_IRQHandler()
+{
+	PIT_TFLG0 = 0X01ul;
 
+	delay--;
+
+	if(run == 1)
+	{
+		storage++;
+	}
+	if(run2 == 1)
+	{
+		storage2++;
+	}
+
+}
 
 
