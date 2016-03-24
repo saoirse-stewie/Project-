@@ -23,6 +23,7 @@ char combo1[] = "CR_MP CR_HP";
 
 static int cr_mp[2];
 static int cr_hp[2];
+
 static int reaction_crmp=0;
 static int reaction_crhp=0;
 volatile int storage=0;
@@ -49,6 +50,8 @@ int run=0;
 int run2=0;
 
 char buffer[BUFFERSIZE];
+
+
 
 
 
@@ -126,7 +129,7 @@ int main()
 			LED_set(GREEN,ON);
 			for(int i=0;i<2000000;i++);
 			LED_set(GREEN,OFF);
-			//	tx_string("Start"); // add when using GUI
+			tx_string("Start"); // add when using GUI
 			currentstate = SECOND;
 			break;
 		case SECOND:
@@ -134,6 +137,7 @@ int main()
 			sw2_count=0;
 			while(sw2_count==0)
 			{}
+			tx_string("Combo"); // add when using GUI
 			database_extraction(combo1);
 			currentstate = FIRST;
 			break;
@@ -180,7 +184,7 @@ void char_int_conversion(char c[], int reaction_crmp, int reaction_crhp)
 
 	int i;
 	int n=0;
-
+	PRINTF("HERE");
 	if(strcmp(c,combo1)==0)//compare both the strings
 	{
 		cr_mp[0] = received_char[0]-'0';//startup//4
@@ -201,6 +205,7 @@ void char_int_conversion(char c[], int reaction_crmp, int reaction_crhp)
 		cr_hp[1] = received_char[3]-'0';//active//8
 		cr_hp[2] = received_char[6]-'0';//recovery//20
 		cr_hp[2] *=10;
+		PRINTF("%d",cr_hp[2]);
 
 		for(i=0;i<3;i++)
 		{
@@ -219,12 +224,17 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 	PRINTF("Beginning reaction Calculation\n");
 	volatile int temp;
 	volatile int temp2;
+
+
 	float reaction;
+	char *buffer2=(char *)&reaction;
+	int hitstun = 2*1000/TIME;
+
 	storage = reaction_crmp;
 	storage2 = reaction_crhp;
-
+	PRINTF("%d", storage);
 	PIT_Configure_interrupt_mode(0.001);
-	//TODO framedata studying.. RESEACRH
+	//TODO add new table to db, 2 frame link!!!!!!!
 
 
 	while(1)
@@ -241,25 +251,60 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 		case PROCESS:
 			PRINTF("\n");
 			delay=10000;
-			temp = reaction_crmp;
+			storage = reaction_crmp;
 			temp2 = reaction_crhp;
 			sw3_count=0;
 			sw4_count=0;
-
+			run=0;
 			while((sw4_count==0))
 			{}
 			run=1;
-			temp = reaction_crmp;
-			while((sw3_count==0)&&(storage>0))
-			{}
-			run2=1;
+			while(storage>0)
+			{
+				PRINTF("\r        %d", storage);
+			}
 			run=0;
+			sw4_count=0;
+			if(storage==0)
+			{
+				storage = reaction_crmp;
+				tick_count=0;
+				run=2;
+			}
+			while((sw4_count==0))
+			{}
+			run=1;
+			reaction = (float)(tick_count-hitstun)/1000;
+			int i;
+			//strcpy(buffer2[0], reaction);
+			//for (i = 0; i < sizeof(float); i++)
+				//	PRINTF("%c",buffer2[i]);
+			//buffer2[0]=reaction;
 
-			reaction = (float)(storage-temp)/1000 + (float)(storage2-temp2);
-			PRINTF("%f", reaction);
+			//put_char(buffer2); // add when using GUI
+			PRINTF("\n%f", reaction);//CR_MP CR_MP next CR_MP CR_HP
 
 			storage = reaction_crmp;
+			//run=1;
+			PRINTF("\n");
+			while(storage>0)
+			{
+				PRINTF("\r        %d", storage);
+			}
+			if(storage==0)
+			{
+				storage = reaction_crmp;
+				tick_count=0;
+				run=2;
+			}
+			sw4_count=0;
+			sw3_count=0;
 
+			while((sw3_count==0))
+			{}
+			run=0;
+			reaction = (float)(tick_count-hitstun)/1000;
+			PRINTF("\n%f", reaction);//CR_MP CR_MP next CR_MP CR_HP
 
 			thisstate = READY;
 			break;
@@ -412,11 +457,11 @@ void PIT_IRQHandler()
 
 	if(run == 1)
 	{
-		storage++;
+		storage--;
 	}
-	if(run2 == 1)
+	else if(run == 2)
 	{
-		storage2++;
+		tick_count++;
 	}
 
 }
