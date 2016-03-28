@@ -11,13 +11,14 @@ a * LED_test_external_buttons.c
 #include "pit_kl26z.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define BUFFERSIZE 10
 #define RDRF_MASK 0x20	//Receive Data Register Full Flag Mask
 #define RIE_MASK 0x20	//Receive Interrupt Enable Mask
 #define UART_S1_TRDE_MASK 0X80
 #define TIME 60
-
+void myPrintf(float fVal);
 char combo1[] = "CR_MP CR_HP";
 
 
@@ -28,6 +29,7 @@ static int reaction_crmp=0;
 static int reaction_crhp=0;
 volatile int storage=0;
 volatile int storage2=0;
+
 
 
 static int sw2_count=0;
@@ -76,7 +78,7 @@ void database_extraction();
 void char_int_conversion(char c[], int, int);
 double reaction_time(int,int);
 void PIT_IRQHandler();
-
+void FloatToStringNew(char *str, float f, char size);
 int main()
 {
 
@@ -215,6 +217,7 @@ void char_int_conversion(char c[], int reaction_crmp, int reaction_crhp)
 
 		reaction_time(reaction_crmp,reaction_crhp);
 
+
 	}
 
 }
@@ -224,15 +227,17 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 	PRINTF("Beginning reaction Calculation\n");
 	volatile int temp;
 	volatile int temp2;
-
-
 	float reaction;
-	char *buffer2=(char *)&reaction;
+	float reaction2;
 	int hitstun = 2*1000/TIME;
-
+	char* chptr;
+	char output[50];
+	char output2[50];
+	int result =0;
 	storage = reaction_crmp;
 	storage2 = reaction_crhp;
 	PRINTF("%d", storage);
+
 	PIT_Configure_interrupt_mode(0.001);
 	//TODO add new table to db, 2 frame link!!!!!!!
 
@@ -276,13 +281,13 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 			run=1;
 			reaction = (float)(tick_count-hitstun)/1000;
 			int i;
-			//strcpy(buffer2[0], reaction);
-			//for (i = 0; i < sizeof(float); i++)
-				//	PRINTF("%c",buffer2[i]);
-			//buffer2[0]=reaction;
-
-			//put_char(buffer2); // add when using GUI
 			PRINTF("\n%f", reaction);//CR_MP CR_MP next CR_MP CR_HP
+
+			temp = reaction;
+			float f2 = reaction - temp;
+			int d2 = (int)(f2 * 10000);
+			sprintf (output, "%d.%04d\n", temp, d2);
+			tx_string(output);
 
 			storage = reaction_crmp;
 			//run=1;
@@ -303,12 +308,31 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 			while((sw3_count==0))
 			{}
 			run=0;
-			reaction = (float)(tick_count-hitstun)/1000;
-			PRINTF("\n%f", reaction);//CR_MP CR_MP next CR_MP CR_HP
+			reaction2 = (float)(tick_count-hitstun)/1000;
+			PRINTF("\n%f", reaction2);//CR_MP CR_MP next CR_MP CR_HP
 
+			temp2 = reaction2;
+			float f3 = reaction2 - temp2;
+			int d3 = (int)(f3 * 10000);
+			sprintf (output2, "%d.%04d\n", temp2, d3);
+			tx_string(output2);
+
+			thisstate = RETURN;
+			break;
+		case RETURN:
+
+
+			//return reaction;
+			//for(int i=0;i<20;i++)
+			//{
+			//*data=(char)reaction;
+			///PRINTF("%c", data[i]);
+			//}
+			//*data = (char ) reaction;
+			//PRINTF("here");
+			//PRINTF("%c",*data);
 			thisstate = READY;
 			break;
-
 
 
 
@@ -318,6 +342,13 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 
 
 }
+
+// assumes float is < 65536 and ARRAYSIZE is big enough
+// problem: it truncates numbers at size without rounding
+// str is a char array to hold the result, float is the number to convert
+// size is the number of decimal digits you want
+
+
 void PORTC_PORTD_IRQHandler()
 {
 
