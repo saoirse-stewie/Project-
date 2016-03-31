@@ -184,6 +184,7 @@ void database_extraction(char ch[])
 void char_int_conversion(char c[], int reaction_crmp, int reaction_crhp)
 {
 
+
 	int i;
 	int n=0;
 	PRINTF("HERE");
@@ -287,7 +288,7 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 			float f2 = reaction - temp;
 			int d2 = (int)(f2 * 10000);
 			sprintf (output, "%d.%04d\n", temp, d2);
-			tx_string(output);
+			//tx_string(output);
 
 			storage = reaction_crmp;
 			//run=1;
@@ -315,7 +316,14 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 			float f3 = reaction2 - temp2;
 			int d3 = (int)(f3 * 10000);
 			sprintf (output2, "%d.%04d\n", temp2, d3);
-			tx_string(output2);
+
+			strcat(output, ",");
+			strcat(output, output2);
+
+
+			//PRINTF("\n");
+			//printf(output);
+			tx_string(output);
 
 			thisstate = RETURN;
 			break;
