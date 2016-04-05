@@ -39,6 +39,7 @@ static int sw4_count=0;
 
 volatile int tick_count=0;
 volatile int delay = 10000;
+int failure_flag=0;
 
 
 char *wr;
@@ -230,10 +231,12 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 	volatile int temp2;
 	float reaction;
 	float reaction2;
+	int frame;
 	int hitstun = 2*1000/TIME;
 	char* chptr;
 	char output[50];
 	char output2[50];
+	char frame_ouput[2];
 	int result =0;
 	storage = reaction_crmp;
 	storage2 = reaction_crhp;
@@ -282,7 +285,19 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 			run=1;
 			reaction = (float)(tick_count-hitstun)/1000;
 			int i;
-			PRINTF("\n%f", reaction);//CR_MP CR_MP next CR_MP CR_HP
+			if(reaction<0)
+			{
+				PRINTF("failure");
+				failure_flag =1;
+			}
+			else
+				PRINTF("\n%f", reaction);//CR_MP CR_MP next CR_MP CR_HP
+
+
+			frame = (reaction *60)/2;
+
+
+			PRINTF("frames: %d", frame);
 
 			temp = reaction;
 			float f2 = reaction - temp;
@@ -310,20 +325,39 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 			{}
 			run=0;
 			reaction2 = (float)(tick_count-hitstun)/1000;
-			PRINTF("\n%f", reaction2);//CR_MP CR_MP next CR_MP CR_HP
+
+			if(reaction2<0)
+			{
+				PRINTF("failure");
+				failure_flag =1;
+			}
+			else
+				PRINTF("\n%f", reaction2);//CR_MP CR_MP next CR_MP CR_HP
+
+			frame = reaction *30;
+				PRINTF("frames: %d", frame);
 
 			temp2 = reaction2;
 			float f3 = reaction2 - temp2;
 			int d3 = (int)(f3 * 10000);
 			sprintf (output2, "%d.%04d\n", temp2, d3);
 
+			sprintf(frame_ouput, "%d", frame);
+
 			strcat(output, ",");
 			strcat(output, output2);
+			strcat(output, ",");
+			strcat(output, frame_ouput);
+			strcat(output, ",");
+			strcat(output, frame_ouput);
 
-
-			//PRINTF("\n");
-			//printf(output);
-			tx_string(output);
+			if(failure_flag==1)
+			{
+				tx_string("FAIL");
+				failure_flag=0;
+			}
+			else
+				tx_string(output);
 
 			thisstate = RETURN;
 			break;
