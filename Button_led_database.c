@@ -36,6 +36,7 @@ static int sw2_count=0;
 static int sw_count=0;
 static int sw3_count=0;
 static int sw4_count=0;
+static int sw5_count=0;
 
 volatile int tick_count=0;
 volatile int delay = 10000;
@@ -102,6 +103,7 @@ int main()
 	FRDM_KL26Z_SW3_Configure(0,FALLING_EDGE);
 	FRDM_KL26Z_SW4_Configure(0,FALLING_EDGE);
 	FRDM_KL26Z_SW5_Configure(0,FALLING_EDGE);
+	FRDM_KL26Z_SW6_Configure(0,FALLING_EDGE);
 
 	PRINTF("hello");
 
@@ -138,11 +140,14 @@ int main()
 		case SECOND:
 			sw_count=0;
 			sw2_count=0;
+			//sw5_count=0;
 			while(sw2_count==0)
 			{}
-			tx_string("Combo"); // add when using GUI
-			database_extraction(combo1);
+
+			//tx_string("Combo");
+			//database_extraction(combo1);
 			currentstate = FIRST;
+
 			break;
 		}
 
@@ -335,7 +340,7 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 				PRINTF("\n%f", reaction2);//CR_MP CR_MP next CR_MP CR_HP
 
 			frame = reaction *30;
-				PRINTF("frames: %d", frame);
+			PRINTF("frames: %d", frame);
 
 			temp2 = reaction2;
 			float f3 = reaction2 - temp2;
@@ -415,6 +420,12 @@ void PORTC_PORTD_IRQHandler()
 	{
 		PORTC_ISFR|= SW5_MASK; //clear interrupt flag for ptc1
 		sw4_count++;
+
+	}
+	if(PORTD_ISFR & SW6_MASK)
+	{
+		PORTD_ISFR|= SW6_MASK; //clear interrupt flag for ptc1
+		sw5_count++;
 
 	}
 
