@@ -48,6 +48,7 @@ static int sw4_count=0;
 static int sw5_count=0;
 static int sw6_count=0;
 static int sw7_count=0;
+static int sw8_count=0;
 
 volatile int tick_count=0;
 volatile int delay = 10000;
@@ -117,6 +118,7 @@ int main()
 	FRDM_KL26Z_SW6_Configure(0,FALLING_EDGE);
 	FRDM_KL26Z_SW7_Configure(0,FALLING_EDGE);
 	FRDM_KL26Z_SW8_Configure(0,FALLING_EDGE);
+	FRDM_KL26Z_SW9_Configure(0,FALLING_EDGE);
 
 	PRINTF("hello");
 
@@ -164,11 +166,11 @@ int main()
 
 			else if(sw5_count%2!=0)
 			{
-
+				tx_string("highL");
 				sw2_count=0;
 				while(sw2_count==0)
 				{}
-				tx_string("combo2");
+				tx_string("combo");
 				database_extraction(combo2);
 			}
 			currentstate = SECOND;
@@ -261,7 +263,7 @@ void char_int_conversion(char c[], int reaction_crmp, int reaction_crhp)
 		{
 
 			reaction_crlp = reaction_crlp + cr_lp[i];
-			PRINTF("%d", reaction_crlp);
+
 			//reaction_crhp = reaction_crhp +
 		}
 		reaction_crlp=(reaction_crlp*1000)/TIME;
@@ -286,8 +288,9 @@ void char_int_conversion(char c[], int reaction_crmp, int reaction_crhp)
 
 		for(i=0;i<3;i++)
 		{
-			reaction_huhk =reaction_huhk + hu_hk[i];
+			reaction_huhk = reaction_huhk + hu_hk[i];
 		}
+		PRINTF("%d",reaction_huhk);
 		reaction_huhk=reaction_huhk/TIME;
 
 		reaction_time2(reaction_crlp,reaction_crhp2,reaction_huhk);
@@ -304,9 +307,11 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 	float reaction;
 	float reaction2;
 	int frame;
-	int hitstun = 2*1000/TIME;
+	int hitstun = 1*1000/TIME;
+	int hitstun2 = 2*1000/TIME;//CR_HP
 	char* chptr;
 	char output[50];
+	int count =0;
 	char output2[50];
 	char frame_ouput[2];
 	int result =0;
@@ -316,7 +321,7 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 
 	PIT_Configure_interrupt_mode(0.001);
 
-	while(1)
+	while(count<=5)
 	{
 
 		switch(thisstate)//better naming convention
@@ -353,7 +358,7 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 			while((sw4_count==0))
 			{}
 			run=1;
-			reaction = (float)(tick_count-hitstun)/1000;
+			reaction = (float)(tick_count-hitstun2)/1000;
 			int i;
 			if(reaction<0)
 			{
@@ -431,16 +436,43 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 			}
 			else
 				tx_string(output);
+			count= count + 1;
+			PRINTF("%d",count);
 
 			thisstate = RETURN;
 			break;
 		case RETURN:
 			thisstate = READY;
 			break;
-
-
-
 		}
+
+
+	}
+	PRINTF("here");
+	while(1)
+	{
+		sw5_count=0;
+		sw2_count=0;
+		sw8_count=0;
+
+			if(sw2_count%2!=0)
+			{
+				PRINTF("here");
+				tx_string("ye");
+				reaction_time(reaction_crmp, reaction_crhp);
+			}
+			else if(sw8_count%2!=0)
+			{
+				PRINTF("h3");
+				tx_string("hi");
+				while(sw2_count==0){}
+				tx_string("no");
+			}
+
+
+	sw5_count=0;
+	sw2_count=0;
+	sw8_count=0;
 
 	}
 
@@ -459,7 +491,7 @@ double reaction_time2(int reaction_crlp, int reaction_crhp2, int reaction_huhk)
 	int hitstun2 = 2*1000/TIME;//CR_HP
 	char output[50];
 	char output2[50];
-
+	int count =0;
 	char frame_ouput[2];
 	int result =0;
 
@@ -469,7 +501,7 @@ double reaction_time2(int reaction_crlp, int reaction_crhp2, int reaction_huhk)
 
 	PIT_Configure_interrupt_mode(0.001);
 
-	while(1)
+	while(count<=5)
 	{
 
 		switch(thisstate)//better naming convention
@@ -583,7 +615,7 @@ double reaction_time2(int reaction_crlp, int reaction_crhp2, int reaction_huhk)
 			}
 			else
 				tx_string(output);
-
+			count= count + 1;
 			thisstate = RETURN;
 			break;
 		case RETURN:
@@ -595,6 +627,32 @@ double reaction_time2(int reaction_crlp, int reaction_crhp2, int reaction_huhk)
 		}
 
 	}
+	while(1)
+		{
+			sw5_count=0;
+			sw2_count=0;
+			sw8_count=0;
+
+				if(sw2_count%2!=0)
+				{
+					PRINTF("here");
+					tx_string("ye");
+					reaction_time(reaction_crmp, reaction_crhp);
+				}
+				else if(sw8_count%2!=0)
+				{
+					PRINTF("h3");
+					tx_string("hi");
+					while(sw2_count==0){}
+					tx_string("no");
+				}
+
+
+		sw5_count=0;
+		sw2_count=0;
+		sw8_count=0;
+
+		}
 
 
 }
@@ -650,7 +708,12 @@ void PORTC_PORTD_IRQHandler()
 		sw7_count++;
 
 	}
+	if(PORTD_ISFR & SW9_MASK)
+	{
+		PORTD_ISFR|= SW9_MASK; //clear interrupt flag for ptc1
+		sw8_count++;
 
+	}
 
 }
 void PORTA_IRQHandler()
