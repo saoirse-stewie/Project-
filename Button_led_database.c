@@ -21,14 +21,14 @@ a * LED_test_external_buttons.c
 #define TIME 60
 void myPrintf(float fVl);
 char combo1[] = "CR_MP CR_MP CR_HP";
-char combo2[] = "CR_LP CR_HP HU_HK";
+char combo2[] = "CR_LP ST_LP CL_LP";
 
 
 static int cr_mp[2];
 static int cr_hp[2];
 
 static int cr_lp[2];
-static int cr_hp2[2];
+static int s_lp[2];
 static int hu_hk[2];
 
 static int reaction_crmp=0;
@@ -45,7 +45,7 @@ static int sw_count=0;
 static int sw3_count=0;
 static int sw4_count=0;
 static int sw5_count=0;
-static int sw6_count=0;
+volatile int sw6_count=0;
 static int sw7_count=0;
 static int sw8_count=0;
 static int sw9_count=0;
@@ -90,7 +90,7 @@ void uart_config();
 void database_extraction();
 void char_int_conversion(char c[], int, int);
 double reaction_time(int,int);
-double reaction_time2(int,int,int);
+double reaction_time2(int,int);
 void PIT_IRQHandler();
 void FloatToStringNew(char *str, float f, char size);
 
@@ -159,6 +159,7 @@ int main()
 			//sw_count=0;
 			sw2_count=0;
 			sw5_count=0;
+			sw8_count=0;
 
 			if(sw2_count%2!=0)
 			{
@@ -170,10 +171,32 @@ int main()
 			{
 				tx_string("highL");
 				sw2_count=0;
+				sw8_count=0;
+				while(sw2_count==0)
+				{}
+				PRINTF("sw\n");
+				///tx_string("choic");
+				while(sw8_count==0)
+				{}
+				//PRINTF("sw2\n");
+				tx_string("choc2");
+				sw2_count=0;
+				sw8_count=0;
 				while(sw2_count==0)
 				{}
 				tx_string("combo");
 				database_extraction(combo2);
+				sw8_count==0;
+
+				break;
+			}
+			else if(sw8_count%2!=0)
+			{
+				sw8_count=0;
+				sw2_count=0;
+				tx_string("hicom");
+				while(sw2_count==0)
+				{}
 			}
 			currentstate = SECOND;
 
@@ -236,7 +259,7 @@ void char_int_conversion(char c[], int reaction_crmp, int reaction_crhp)
 			reaction_crmp = reaction_crmp + cr_mp[i];
 			//reaction_crhp = reaction_crhp +
 		}
-		reaction_crmp=(reaction_crmp*1000)/TIME;
+		reaction_crmp=(reaction_crmp*1000)/40;
 		//PRINTF("%d",reaction_crmp);
 
 		cr_hp[0] = received_char[1]-'0';//startup//4
@@ -249,7 +272,7 @@ void char_int_conversion(char c[], int reaction_crmp, int reaction_crhp)
 		{
 			reaction_crhp = reaction_crhp + cr_hp[i];
 		}
-		reaction_crhp=reaction_crhp/TIME;
+		reaction_crhp=reaction_crhp/40;
 
 		reaction_time(reaction_crmp,reaction_crhp);
 
@@ -258,50 +281,35 @@ void char_int_conversion(char c[], int reaction_crmp, int reaction_crhp)
 	else if(strcmp(c,combo2)==0)//compare both the strings
 	{
 		cr_lp[0] = received_char[0]-'0';//startup//4
-		cr_lp[1] = received_char[4]-'0';//active//4
-		cr_lp[2] = received_char[8]-'0';//recovery //17
-		cr_lp[2] += 1;
+		cr_lp[1] = received_char[3]-'0';//active//4
+		cr_lp[2] = received_char[6]-'0';//recovery //17
 
 		for(i=0;i<3;i++)
 		{
 
 			reaction_crlp  += cr_lp[i];
-			//PRINTF("%d", reaction_crlp);
-			//reaction_crhp = reaction_crhp +
 		}
-		PRINTF("%d",reaction_crlp);
-		reaction_crlp=(reaction_crlp*1000)/TIME;
+
+		reaction_crlp=(reaction_crlp*1000)/40;
 
 
-		cr_hp2[0] = received_char[1]-'0';//startup//4
-		cr_hp2[1] = received_char[5]-'0';//active//8
-		cr_hp2[2] = received_char[9]-'0';//recovery//20
-		cr_hp2[2] *=10;
-		cr_hp2[2] += 8;
+		s_lp[0] = received_char[1]-'0';//startup//4
+		s_lp[1] = received_char[4]-'0';//active//8
+		s_lp[2] = received_char[7]-'0';//recovery//20
 
 		for(i=0;i<3;i++)
 		{
 
-			reaction_crhp2 +=  cr_hp2[i];
+
+			reaction_crhp2 +=  s_lp[i];
+			PRINTF("%d", s_lp[i]);
 
 		}
+		PRINTF("%d", reaction_crhp2);
 
-		reaction_crhp2=(reaction_crhp2*1000)/TIME;
+		reaction_crhp2=(reaction_crhp2*1000)/40;
 
-
-		hu_hk[0] = received_char[3]-'0';
-		//PRINTF("%d",received_char[7]-'0');
-		hu_hk[0] +=10;
-		hu_hk[1] = 10;
-		hu_hk[2] = received_char[10]-'0';
-
-		for(i=0;i<3;i++)
-		{
-			reaction_huhk = reaction_huhk + hu_hk[i];
-		}
-
-		reaction_huhk=(reaction_huhk*1000)/TIME;
-		reaction_time2(reaction_crlp,reaction_crhp2,reaction_huhk);
+		reaction_time2(reaction_crlp,reaction_crhp2);
 
 	}
 
@@ -374,7 +382,7 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 				break;
 			}
 			run=0;
-			hit = hit-137;
+			hit = hit;
 
 			sprintf(cr_mp_time,"%d", hit);
 
@@ -401,7 +409,7 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 			while(sw3_count==0)
 			{}
 			run=0;
-			hit=hit-137;
+			hit=hit;
 
 			sprintf(cr_hp_time,"%d",hit);
 
@@ -484,27 +492,26 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 
 
 }
-double reaction_time2(int reaction_crlp, int reaction_crhp2, int reaction_huhk)
+double reaction_time2(int reaction_crlp, int reaction_crhp2)
 {
 	//FIX
 	PRINTF("Beginning reaction Calculation\n");
+	storage = reaction_crlp;
+	PRINTF("%d",storage);
+
 	volatile int temp;
 	volatile int temp2;
 	float reaction;
 	float reaction2;
-	int frame;
-	float hitstun = (3*1000)/TIME;//CR_LP-->33.33
-	float hitstun2 = 2*1000/TIME;//CR_HP
-	char output[50];
-	char output2[50];
-	char output3[50];
+	float frames;
 	int count =0;
-	char frame_ouput[2];
-	int result =0;
 
-	storage = reaction_crlp;
-	//storage2 = reaction_crhp2;
-	//storage3 = reaction_huhk;
+	char cr_lp_time[50]={0};
+	char cr_lp_frame[50]={0};
+	char s_lp_time[50]={0};
+	char s_lp_frame[50]={0};
+
+	char output[100]={0};
 
 	PIT_Configure_interrupt_mode(0.001);
 
@@ -522,174 +529,81 @@ double reaction_time2(int reaction_crlp, int reaction_crhp2, int reaction_huhk)
 		case PROCESS:
 			PRINTF("\n");
 
+			cr_lp_time[50] = 0;
+			cr_lp_frame[50] = 0;
+			s_lp_time[50] = 0;
+			s_lp_frame[50]= 0;
 
-			//temp2 = reaction_crhp;
 			sw6_count=0;
 			sw7_count=0;
 			run=0;
-			//counter=0;
-			//tick_count=0;
+			while((sw6_count==0))
+			{}
 
-			//if(sw6_count%2!=0)
-			//{
-			//delay=10000;
-			//PRINTF("ho");
-			///thisstate=READY;
-			//break;
-			//}
+			run=1;
+			hit=0;
+			while(storage>=0)
+			{
+				PRINTF("\r%d", storage);
+			}
+			PRINTF("\n");
+			sw6_count=0;
+			sw7_count=0;
+			run=2;
+			while(sw6_count==0)
+			{}
+			run=0;
+			hit = hit-10;
+			PRINTF("%d",hit);
 
+			sprintf(cr_lp_time,"%d", hit);
+
+			frames = (float)hit*60/1000;
+
+			PRINTF("\n MSec: %d, frames: %.2f",hit,frames);
+			temp = frames;
+			float f2 = frames - temp;
+			f2 = fabs(f2);
+			int d2 = (int)(f2*10000);
+
+			sprintf(cr_lp_frame,"%d.%02d\n",temp,d2);
+
+			hit=0;
 			storage = reaction_crlp;
-			while((sw6_count==0))
-			{}
-			run=1;
-			while(storage>0)
-			{
-				PRINTF("\r        %.3d", storage);
-			}
-			run=0;
-			sw6_count=0;
-			if(storage==0)
-			{
-				storage = reaction_crlp;
-				//counter=0;
-				run=2;
-			}
-
-			storage = reaction_crlp;//183 miliseconds
-			while((sw6_count==0))
-			{}
-			run=1;
-
-			//reaction = (float)(counter-hitstun);
-
-			int i;
-			if(reaction<0)
-			{
-				//PRINTF("failure");
-				failure_flag =1;
-			}
-			else
-				PRINTF("\n%.2f", reaction);//CR_MP CR_MP next CR_MP CR_HP
-
-			frame = (reaction *60)/1000;
-			sprintf(frame_ouput, "%d", frame);
-
-			PRINTF("frames: %d", frame);
-
-			temp = reaction;
-			float f2 = reaction - temp;
-			int d2 = (int)(f2 * 10000);
-			sprintf (output, "%d.%04d\n", temp, d2);
-			PRINTF("\n");
-
-			//counter=0;
-			while(storage>0)
-			{
-				PRINTF("\r        %d", storage);
-			}
-
-			sw6_count=0;
-
-			if(storage==0)
-			{
-				run=0;
-				storage = (reaction_crhp2);
-				//counter=0;
-				//PRINTF("\n%2f",hitstun2);
-				run=3;
-
-				//PRINTF("%d",tick_count);
-			}
-
 			sw6_count=0;
 			sw7_count=0;
 
+			thisstate = RETURN;
 
-			while((sw7_count==0))
-			{}
-			run=1;
-			//PRINTF("\r                                                    %d",counter);
-			//reaction2 = (float)((tick_count)-hitstun2);
-			PRINTF("\n%.2f", reaction2);//CR_MP CR_MP next CR_MP CR_HP
-			if(reaction2<0)
-			{
-				//PRINTF("failure");
-				failure_flag =1;
-			}
-			else
-				//tick_count=0;
-				//PRINTF("\n%.2f", reaction2);//CR_MP CR_MP next CR_MP CR_HP
-				delay =10000;
-			//frame = (reaction *60)/2;
-
-
-			//PRINTF("frames: %d", frame);
-			/*
-			temp = reaction;
-			float f3 = reaction - temp;
-			int d3 = (int)(f3 * 10000);
-			sprintf (output2, "%d.%04d\n", temp, d3);
-
-			PRINTF("\n");
-
-			while(storage>333)
-			{
-				PRINTF("\r        %d", storage);
-				tick_count=0;
-			}
-			sw6_count=0;
-
-			if(storage==333)
-			{
-				run =1;
-				sw3_count=0;
-				while((sw3_count==0))
-				{}
-				run=1;
-				reaction = (float)(storage-tick_count);
-
-				if(reaction<0)
-				{
-					PRINTF("failure");
-					failure_flag =1;
-				}
-				else
-					PRINTF("\n%f", reaction);//CR_MP CR_MP next CR_MP CR_HP
-
-				frame = (reaction *60)/2;
-				PRINTF("frames: %d", frame);
-
-				temp = reaction;
-				float f4 = reaction - temp;
-				int d4 = (int)(f4 * 10000);
-				sprintf (output3, "%d.%04d\n", temp, d4);
-
-				strcat(output, ",");
-				strcat(output, output2);
-				strcat(output, ",");
-				strcat(output, frame_ouput);
-				strcat(output, ",");
-				strcat(output, frame_ouput);
-				strcat(output, ",");
-				strcat(output, "cr_mp_cr_mp_cr_hk");
-
-				tick_count=0;
-				run=2;
-			}
-
-			sw6_count=0;
-			sw7_count=0;
-
-			 */
-
-			thisstate = READY;
 			break;
+
 		case RETURN:
+			sw_count=0;
+			sw2_count=0;
+			sw3_count=0;
+			sw6_count=0;
+			sw7_count=0;
+
+			strcat(output,cr_lp_time);
+			strcat(output,",");
+			strcat(output,"0");
+			strcat(output,",");
+			strcat(output,cr_lp_frame);
+			strcat(output,",");
+			strcat(output,"0");
+			strcat(output,",");
+			strcat(output,"cr_lp_s_lp_cr_oks");
+			tx_string(output);
+
+			memset(output, 0, sizeof(output));
+
+			count+=1;
+			hit = 0;
+			run =0;
+
+			delay =10000;
 			thisstate = READY;
 			break;
-
-
-
 		}
 
 	}
@@ -703,7 +617,7 @@ double reaction_time2(int reaction_crlp, int reaction_crhp2, int reaction_huhk)
 		{
 			PRINTF("here");
 			tx_string("ye");
-			reaction_time(reaction_crmp, reaction_crhp);
+			reaction_time2(reaction_crlp, reaction_crhp2);
 		}
 		else if(sw8_count%2!=0)
 		{
