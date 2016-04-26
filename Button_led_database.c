@@ -22,6 +22,7 @@ a * LED_test_external_buttons.c
 void myPrintf(float fVl);
 char combo1[] = "CR_MP CR_MP CR_HP";
 char combo2[] = "CR_LP ST_LP CL_LP";
+char combo3[] = "CR_LP CR_MP CL_LP";
 
 
 static int cr_mp[2];
@@ -87,13 +88,14 @@ char char_received();
 void init_buffer();
 void UART1_IRQHandler(void);
 void uart_config();
-void database_extraction();
-void char_int_conversion(char c[], int, int);
+double database_extraction();
+double char_int_conversion(char c[], int, int);
 double reaction_time(int,int);
 double reaction_time2(int,int);
+double reaction_time3(int,int);
 void PIT_IRQHandler();
 void FloatToStringNew(char *str, float f, char size);
-
+int state =0;
 
 int main()
 {
@@ -136,11 +138,13 @@ int main()
 		case START:
 			sw_count=0;
 			sw2_count=0;
+			PRINTF("hello");
 			while(sw_count==0)
 			{}
 			LED_set(RED,ON);
 			for(int i=0;i<2000000;i++);
 			LED_set(RED,OFF);
+			sw_count=0;
 			currentstate = FIRST;
 			break;
 		case FIRST:
@@ -149,31 +153,45 @@ int main()
 			sw5_count=0;
 			while(sw2_count==0)
 			{}
+
 			LED_set(GREEN,ON);
 			for(int i=0;i<2000000;i++);
 			LED_set(GREEN,OFF);
+			for(int i=0;i<20000;i++);
 			tx_string("Start"); // add when using GUI
+
+			//for(int i=0;i<20000;i++);
 			currentstate = SECOND;
 			break;
 		case SECOND:
-			//sw_count=0;
+			sw_count=0;
 			sw2_count=0;
 			sw5_count=0;
 			sw8_count=0;
+			sw6_count=0;
+			sw4_count=0;
 
+			//tx_string("Start"); // add when using GUI
 			if(sw2_count%2!=0)
 			{
 				tx_string("combo");
-				database_extraction(combo1);
+				state = database_extraction(combo1);
+				PRINTF("%d",state);
+				if (state==20)
+				{
+					currentstate = START;
+					break;
+				}
+
 			}
 
-			else if(sw5_count%2!=0)
+			else if(sw8_count%2!=0)
 			{
 				tx_string("highL");
 				sw2_count=0;
 				sw8_count=0;
-				while(sw2_count==0)
-				{}
+				//while(sw2_count==0)
+				//{}
 				PRINTF("sw\n");
 				///tx_string("choic");
 				while(sw8_count==0)
@@ -182,23 +200,49 @@ int main()
 				tx_string("choc2");
 				sw2_count=0;
 				sw8_count=0;
-				while(sw2_count==0)
-				{}
-				tx_string("combo");
-				database_extraction(combo2);
-				sw8_count==0;
+				break;
 
+			}
+			if(sw6_count%2!=0)
+			{
+				tx_string("combo");
+				state = database_extraction(combo2);
+				PRINTF("%d",state);
+				if (state==20)
+				{
+					currentstate = START;
+					break;
+				}
+				//sw8_count==0;
+				sw6_count=0;
+			}
+			else if(sw_count%2!=0)
+			{
+				tx_string("clear");
+				currentstate = SECOND;
+				sw_count=0;
 				break;
 			}
-			else if(sw8_count%2!=0)
+			else if(sw5_count%2!=0)
 			{
-				sw8_count=0;
-				sw2_count=0;
-				tx_string("hicom");
-				while(sw2_count==0)
-				{}
+				tx_string("bread");
+				//database_extraction(combo3);
+
+
 			}
-			currentstate = SECOND;
+			else if(sw4_count%2!=0)
+			{
+				tx_string("combo");
+				state = database_extraction(combo3);
+				PRINTF("%d",state);
+				if (state==20)
+				{
+					currentstate = START;
+					break;
+				}
+
+			}
+
 
 			break;
 		}
@@ -207,7 +251,7 @@ int main()
 	return 0;
 }
 
-void database_extraction(char ch[])
+double database_extraction(char ch[])
 {
 
 	while(1)
@@ -232,14 +276,18 @@ void database_extraction(char ch[])
 
 			}
 			int i;
+			int state=0;
+			state=char_int_conversion(ch, reaction_crmp, reaction_crhp);
+			if(state ==20)
+				return state;
+			//PRINTF("%d",state);
 
-			char_int_conversion(ch, reaction_crmp, reaction_crhp);
 
 		}
 	}
 }
 
-void char_int_conversion(char c[], int reaction_crmp, int reaction_crhp)
+double char_int_conversion(char c[], int reaction_crmp, int reaction_crhp)
 {
 
 
@@ -252,14 +300,14 @@ void char_int_conversion(char c[], int reaction_crmp, int reaction_crhp)
 		cr_mp[0] = received_char[0]-'0';//startup//4
 		cr_mp[1] = received_char[2]-'0';//active//4
 		cr_mp[2] = received_char[5]-'0';//recovery //17
-
+		cr_mp[2] += 1 ;//recovery //17
 
 		for(i=0;i<3;i++)
 		{
 			reaction_crmp = reaction_crmp + cr_mp[i];
 			//reaction_crhp = reaction_crhp +
 		}
-		reaction_crmp=(reaction_crmp*1000)/40;
+		reaction_crmp=(reaction_crmp*1000)/60;
 		//PRINTF("%d",reaction_crmp);
 
 		cr_hp[0] = received_char[1]-'0';//startup//4
@@ -272,9 +320,11 @@ void char_int_conversion(char c[], int reaction_crmp, int reaction_crhp)
 		{
 			reaction_crhp = reaction_crhp + cr_hp[i];
 		}
-		reaction_crhp=reaction_crhp/40;
-
-		reaction_time(reaction_crmp,reaction_crhp);
+		reaction_crhp=reaction_crhp*1000/60;
+		int state=0;
+		state = reaction_time(reaction_crmp,reaction_crhp);
+		if (state ==20)
+			return state;
 
 
 	}
@@ -290,7 +340,7 @@ void char_int_conversion(char c[], int reaction_crmp, int reaction_crhp)
 			reaction_crlp  += cr_lp[i];
 		}
 
-		reaction_crlp=(reaction_crlp*1000)/40;
+		reaction_crlp=(reaction_crlp*1000)/60;
 
 
 		s_lp[0] = received_char[1]-'0';//startup//4
@@ -307,11 +357,47 @@ void char_int_conversion(char c[], int reaction_crmp, int reaction_crhp)
 		}
 		PRINTF("%d", reaction_crhp2);
 
-		reaction_crhp2=(reaction_crhp2*1000)/40;
+		reaction_crhp2=(reaction_crhp2*1000)/60;
+		double state;
 
-		reaction_time2(reaction_crlp,reaction_crhp2);
+		state = reaction_time2(reaction_crmp,reaction_crhp);
+		if (state ==20)
+			return state;
+
+
 
 	}
+	else if(strcmp(c,combo3)==0)//compare both the strings
+	{
+		cr_mp[0] = received_char[1]-'0';//startup//4
+		cr_mp[1] = received_char[5]-'0';//active//4
+		cr_mp[2] = received_char[6]-'0';//recovery //17
+		cr_mp[2] +=2;
+
+		for(i=0;i<3;i++)
+		{
+			reaction_crmp = reaction_crmp + cr_mp[i];
+			//reaction_crhp = reaction_crhp +
+		}
+		PRINTF("%d",reaction_crmp);
+		reaction_crmp=(reaction_crmp*1000)/60;
+		cr_lp[0] = received_char[0]-'0';//startup//4
+		cr_lp[1] = received_char[3]-'0';//active//4
+		cr_lp[2] = received_char[6]-'0';//recovery //17
+
+		for(i=0;i<3;i++)
+		{
+
+			reaction_crlp  += cr_lp[i];
+		}
+		PRINTF("%d",reaction_crlp);
+		reaction_crlp=(reaction_crlp*1000)/60;
+
+		state = reaction_time3(reaction_crmp,reaction_crhp);
+		if (state ==20)
+			return state;
+	}
+
 
 }
 //TODO FIX TIMINGS
@@ -382,7 +468,7 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 				break;
 			}
 			run=0;
-			hit = hit;
+			hit = hit-120;
 
 			sprintf(cr_mp_time,"%d", hit);
 
@@ -409,7 +495,7 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 			while(sw3_count==0)
 			{}
 			run=0;
-			hit=hit;
+			hit=hit-137;
 
 			sprintf(cr_hp_time,"%d",hit);
 
@@ -468,27 +554,46 @@ double reaction_time(int reaction_crmp, int reaction_crhp)
 		sw5_count=0;
 		sw2_count=0;
 		sw8_count=0;
+		sw6_count=0;
 
 		if(sw2_count%2!=0)
 		{
 			PRINTF("here");
 			tx_string("ye");
 			reaction_time(reaction_crmp, reaction_crhp);
+			sw2_count=0;
+			sw8_count=0;
+			sw6_count=0;
 		}
 		else if(sw8_count%2!=0)
 		{
-			PRINTF("h3");
+			sw8_count=0;
 			tx_string("hi");
 			while(sw2_count==0){}
 			tx_string("no");
+			sw8_count=0;
+			sw2_count=0;
+			sw6_count=0;
+			while(sw6_count==0)
+			{}
+			tx_string("st");
+			break;
 		}
+		//	else if(sw6_count%2!=0)
+		//{
+		//tx_string("st");
+		//break;
+		//}
 
-
+		sw6_count=0;
 		sw5_count=0;
 		sw2_count=0;
 		sw8_count=0;
 
 	}
+	PRINTF("brak");
+	int state = 20;
+	return state;
 
 
 }
@@ -553,7 +658,7 @@ double reaction_time2(int reaction_crlp, int reaction_crhp2)
 			while(sw6_count==0)
 			{}
 			run=0;
-			hit = hit-10;
+			hit = hit-137;
 			PRINTF("%d",hit);
 
 			sprintf(cr_lp_time,"%d", hit);
@@ -572,6 +677,175 @@ double reaction_time2(int reaction_crlp, int reaction_crhp2)
 			storage = reaction_crlp;
 			sw6_count=0;
 			sw7_count=0;
+
+			thisstate = RETURN;
+
+			break;
+
+		case RETURN:
+			sw_count=0;
+			sw2_count=0;
+			sw3_count=0;
+			sw6_count=0;
+			sw7_count=0;
+
+			LED_set(GREEN,ON);
+			for(int i=0;i<2000000;i++);
+			LED_set(GREEN,OFF);
+
+			strcat(output,cr_lp_time);
+			strcat(output,",");
+			strcat(output,"0");
+			strcat(output,",");
+			strcat(output,cr_lp_frame);
+			strcat(output,",");
+			strcat(output,"0");
+			strcat(output,",");
+			strcat(output,"cr_lp_s_lp_cr_oks");
+			tx_string(output);
+
+			memset(output, 0, sizeof(output));
+
+			count+=1;
+			hit = 0;
+			run =0;
+
+			delay =10000;
+			thisstate = PROCESS;
+			break;
+		}
+
+	}
+	PRINTF("here");
+	while(1)
+	{
+		sw5_count=0;
+		sw2_count=0;
+		sw8_count=0;
+		sw6_count=0;
+
+		if(sw2_count%2!=0)
+		{
+			PRINTF("here");
+			tx_string("ye");
+			reaction_time2(reaction_crmp, reaction_crhp);
+			sw2_count=0;
+			sw8_count=0;
+			sw6_count=0;
+		}
+		else if(sw8_count%2!=0)
+		{
+			sw8_count=0;
+			tx_string("hi");
+			while(sw2_count==0){}
+			tx_string("no");
+			sw8_count=0;
+			sw2_count=0;
+			sw6_count=0;
+			while(sw6_count==0)
+			{}
+			tx_string("st");
+			break;
+		}
+		//	else if(sw6_count%2!=0)
+		//{
+		//tx_string("st");
+		//break;
+		//}
+
+		sw6_count=0;
+		sw5_count=0;
+		sw2_count=0;
+		sw8_count=0;
+
+	}
+	PRINTF("brak");
+	int state = 20;
+	return state;
+
+
+
+}
+double reaction_time3(int reaction_crlp, int reaction_crmp2)
+{
+	//FIX
+	PRINTF("Beginning reaction Calculation\n");
+	storage = reaction_crlp;
+	PRINTF("%d",storage);
+
+	volatile int temp;
+	volatile int temp2;
+	float reaction;
+	float reaction2;
+	float frames;
+	int count =0;
+
+	char cr_lp_time[50]={0};
+	char cr_lp_frame[50]={0};
+	char s_lp_time[50]={0};
+	char s_lp_frame[50]={0};
+
+	char output[100]={0};
+
+	PIT_Configure_interrupt_mode(0.001);
+
+	while(count<=5)
+	{
+
+		switch(thisstate)//better naming convention
+		{
+		case READY:
+
+			while(delay/1000>0)
+				PRINTF("\r%3d", --delay / 1000);
+			thisstate = PROCESS;
+			break;
+		case PROCESS:
+			PRINTF("\n");
+
+			cr_lp_time[50] = 0;
+			cr_lp_frame[50] = 0;
+			s_lp_time[50] = 0;
+			s_lp_frame[50]= 0;
+
+			sw6_count=0;
+			sw4_count=0;
+			run=0;
+			while((sw6_count==0))
+			{}
+
+			run=1;
+			hit=0;
+			while(storage>=0)
+			{
+				PRINTF("\r%d", storage);
+			}
+			PRINTF("\n");
+			sw6_count=0;
+			sw4_count=0;
+			run=2;
+			while(sw4_count==0)
+			{}
+			run=0;
+			hit = hit-50;
+			PRINTF("%d",hit);
+
+			sprintf(cr_lp_time,"%d", hit);
+
+			frames = (float)hit*60/1000;
+
+			PRINTF("\n MSec: %d, frames: %.2f",hit,frames);
+			temp = frames;
+			float f2 = frames - temp;
+			f2 = fabs(f2);
+			int d2 = (int)(f2*10000);
+
+			sprintf(cr_lp_frame,"%d.%02d\n",temp,d2);
+
+			hit=0;
+			storage = reaction_crlp;
+			sw6_count=0;
+			sw4_count=0;
 
 			thisstate = RETURN;
 
@@ -607,36 +881,54 @@ double reaction_time2(int reaction_crlp, int reaction_crhp2)
 		}
 
 	}
+	PRINTF("here");
 	while(1)
 	{
 		sw5_count=0;
 		sw2_count=0;
 		sw8_count=0;
+		sw6_count=0;
 
 		if(sw2_count%2!=0)
 		{
 			PRINTF("here");
 			tx_string("ye");
-			reaction_time2(reaction_crlp, reaction_crhp2);
+			reaction_time3(reaction_crmp, reaction_crhp);
+			sw2_count=0;
+			sw8_count=0;
+			sw6_count=0;
 		}
 		else if(sw8_count%2!=0)
 		{
-			PRINTF("h3");
+			sw8_count=0;
 			tx_string("hi");
 			while(sw2_count==0){}
 			tx_string("no");
+			sw8_count=0;
+			sw2_count=0;
+			sw6_count=0;
+			while(sw6_count==0)
+			{}
+			tx_string("st");
+			break;
 		}
+		//	else if(sw6_count%2!=0)
+		//{
+		//tx_string("st");
+		//break;
+		//}
 
-
+		sw6_count=0;
 		sw5_count=0;
 		sw2_count=0;
 		sw8_count=0;
 
 	}
-
+	PRINTF("brak");
+	int state = 20;
+	return state;
 
 }
-
 
 
 
@@ -650,7 +942,7 @@ void PORTC_PORTD_IRQHandler()
 		sw_count++;
 
 	}
-	if(PORTC_ISFR & SW2_MASK)
+	if(PORTC_ISFR & SW2_MASK)//a
 	{
 		PORTC_ISFR|= SW2_MASK; //clear interrupt flag for ptc1
 		sw2_count++;
