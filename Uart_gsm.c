@@ -248,7 +248,7 @@ char buffer_get()
 	}
 	else
 	{
-		//printf("\nBuffer Empty");
+		//PRINTF("\nBuffer Empty");
 		return 0;
 	}
 }
@@ -279,6 +279,7 @@ int send_command(char * command_ptr, char * response_ptr, int size, int wait_tim
 	char buff[20];
 	char rx_count = 0;
 	char *temp_ptr = response_ptr;
+	PRINTF("HERE");
 
 	for(x=0;x<size;x++) //clear response buffer
 		*temp_ptr++ = 0;
@@ -303,7 +304,7 @@ int send_command(char * command_ptr, char * response_ptr, int size, int wait_tim
 			{
 				if(strstr(response_ptr - rx_count, "OK") || strstr(response_ptr - rx_count, "ERROR:"))
 				{
-					//printf("\nOK or ERROR received\n");
+					PRINTF("\nOK or ERROR received\n");
 					termination_char_received = 1;
 				}
 			}
@@ -427,7 +428,7 @@ void UART0_IRQHandler(void)
 	if(UART0_S1 & RDRF_MASK)
 	{
 		ch = UART0_D;   //read character. This clears RDRF flag
-		//out_char(ch); //echo character
+		PUTCHAR(UART0_D); //echo character
 		buffer_put(ch);
 	}
 }

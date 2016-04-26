@@ -13,9 +13,10 @@ int main()
 {
 	hardware_init();
 	FRDM_KL26Z_LEDs_Configure();
-	FRDM_KL26Z_SW2_Configure(PULLUP,0);
+	FRDM_KL26Z_SW2_Configure(0,0);
+	FRDM_KL26Z_SW3_Configure(0,0);
 
-
+	LED_set(GREEN,OFF);
 
 
 	//SIM_SCGC5|=PORTA_CLK_ENABLE; //enable port module using SIM_SCGC5
@@ -23,13 +24,17 @@ int main()
 								//GPIO pin with pull up
 	while(1)
 	{
-		LED_set(GREEN,OFF);
+
 		//if(GPIOA_PDIR & SW1_MASK)
 
-		if(SW2_read())
+		if(SW2_read()&&SW2_MASK)
 		{
 			LED_set(GREEN,ON);
 		}
+		//else if(SW3_read())
+		//{
+			//LED_set(RED,TOGGLE);
+		//}
 	}
 
 
